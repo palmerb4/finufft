@@ -43,7 +43,7 @@ typedef struct {
   FLT X2,C2,D2,h2,gam2;  // y
   FLT X3,C3,D3,h3,gam3;  // z
   FLT X4,C4,D4,h4,gam4;  // p
-  FLT X5,C5,D5,h5,gam5;  // w
+  FLT X5,C5,D5,h5,gam5;  // q
 } TYPE3PARAMS;
 
 

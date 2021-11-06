@@ -1033,7 +1033,7 @@ int FINUFFT_SETPTS(FINUFFT_PLAN p, BIGINT nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj
     }
 
     // always shift as use gam to rescale x_j to x'_j, etc (twist iii)...
-    FLT ig1 = 1.0/p->t3P.gam1, ig2=0.0, ig3=0.0;   // "reciprocal-math" optim
+    FLT ig1 = 1.0/p->t3P.gam1, ig2=0.0, ig3=0.0, ig4=0.0, ig5=0.0;   // "reciprocal-math" optim
     if (d>1)
       ig2 = 1.0/p->t3P.gam2;
     if (d>2)
@@ -1087,7 +1087,7 @@ int FINUFFT_SETPTS(FINUFFT_PLAN p, BIGINT nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj
       if (d>3)
         p->Up[k] = p->t3P.h4*p->t3P.gam4*(v[k]- p->t3P.D4);  // so |v'_k| < pi/R
       if (d>4)
-        p->Up[k] = p->t3P.h5*p->t3P.gam5*(q[k]- p->t3P.D5);  // so |w'_k| < pi/R
+        p->Up[k] = p->t3P.h5*p->t3P.gam5*(w[k]- p->t3P.D5);  // so |w'_k| < pi/R
     }
     
     // (old STEP 3a) Compute deconvolution post-factors array (per targ pt)...

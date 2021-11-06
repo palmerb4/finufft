@@ -24,21 +24,21 @@
 #define TF_OMIT_SPREADING            8 // don't interp/spread (dir=1: to subgrids)
 
 // things external (spreadinterp) interface needs...
-int spreadinterp(BIGINT N1, BIGINT N2, BIGINT N3, FLT *data_uniform,
-		 BIGINT M, FLT *kx, FLT *ky, FLT *kz,
+int spreadinterp(BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, BIGINT N5, FLT *data_uniform,
+		 BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT *kp, FLT *kq,
 		 FLT *data_nonuniform, spread_opts opts);
-int spreadcheck(BIGINT N1, BIGINT N2, BIGINT N3,
-                 BIGINT M, FLT *kx, FLT *ky, FLT *kz, spread_opts opts);
-int indexSort(BIGINT* sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT M, 
-               FLT *kx, FLT *ky, FLT *kz, spread_opts opts);
-int interpSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, 
-		      FLT *data_uniform,BIGINT M, FLT *kx, FLT *ky, FLT *kz,
+int spreadcheck(BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, BIGINT N5,
+                 BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT *kp, FLT *kq, spread_opts opts);
+int indexSort(BIGINT* sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, BIGINT N5, BIGINT M, 
+               FLT *kx, FLT *ky, FLT *kz, FLT *kp, FLT *kq, spread_opts opts);
+int interpSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, BIGINT N5, 
+		      FLT *data_uniform,BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT *kp, FLT *kq,
 		 FLT *data_nonuniform, spread_opts opts, int did_sort);
-int spreadSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, 
-		      FLT *data_uniform,BIGINT M, FLT *kx, FLT *ky, FLT *kz,
+int spreadSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, BIGINT N5, 
+		      FLT *data_uniform,BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT *kp, FLT *kq,
 		 FLT *data_nonuniform, spread_opts opts, int did_sort);
-int spreadinterpSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, 
-		      FLT *data_uniform,BIGINT M, FLT *kx, FLT *ky, FLT *kz,
+int spreadinterpSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, BIGINT N5, 
+		      FLT *data_uniform,BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT *kp, FLT *kq,
 		      FLT *data_nonuniform, spread_opts opts, int did_sort);
 FLT evaluate_kernel(FLT x,const spread_opts &opts);
 FLT evaluate_kernel_noexp(FLT x,const spread_opts &opts);

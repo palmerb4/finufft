@@ -63,7 +63,7 @@ int FINUFFT1D1(BIGINT nj,FLT* xj,CPX* cj,int iflag,FLT eps,BIGINT ms,
   int n_transf = 1;
   int type = 1;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, NULL, NULL, NULL, NULL, cj,
-			 iflag, eps, n_modes, 0, NULL, NULL, NULL, NULL, fk, opts);
+			 iflag, eps, n_modes, 0, NULL, NULL, NULL, NULL, NULL, fk, opts);
   return ier;
 }
 

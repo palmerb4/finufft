@@ -46,6 +46,18 @@
 #define FINUFFT3D2MANY_ finufftf3d2many_
 #define FINUFFT3D3_ finufftf3d3_
 #define FINUFFT3D3MANY_ finufftf3d3many_
+#define FINUFFT4D1_ finufftf4d1_
+#define FINUFFT4D1MANY_ finufftf4d1many_
+#define FINUFFT4D2_ finufftf4d2_
+#define FINUFFT4D2MANY_ finufftf4d2many_
+#define FINUFFT4D3_ finufftf4d3_
+#define FINUFFT4D3MANY_ finufftf4d3many_
+#define FINUFFT5D1_ finufftf5d1_
+#define FINUFFT5D1MANY_ finufftf5d1many_
+#define FINUFFT5D2_ finufftf5d2_
+#define FINUFFT5D2MANY_ finufftf5d2many_
+#define FINUFFT5D3_ finufftf5d3_
+#define FINUFFT5D3MANY_ finufftf5d3many_
 #else
 #define FINUFFT_MAKEPLAN_ finufft_makeplan_
 #define FINUFFT_SETPTS_ finufft_setpts_
@@ -70,6 +82,18 @@
 #define FINUFFT3D2MANY_ finufft3d2many_
 #define FINUFFT3D3_ finufft3d3_
 #define FINUFFT3D3MANY_ finufft3d3many_
+#define FINUFFT4D1_ finufft4d1_
+#define FINUFFT4D1MANY_ finufft4d1many_
+#define FINUFFT4D2_ finufft4d2_
+#define FINUFFT4D2MANY_ finufft4d2many_
+#define FINUFFT4D3_ finufft4d3_
+#define FINUFFT4D3MANY_ finufft4d3many_
+#define FINUFFT5D1_ finufft5d1_
+#define FINUFFT5D1MANY_ finufft5d1many_
+#define FINUFFT5D2_ finufft5d2_
+#define FINUFFT5D2MANY_ finufft5d2many_
+#define FINUFFT5D3_ finufft5d3_
+#define FINUFFT5D3MANY_ finufft5d3many_
 #endif
 
 
@@ -88,7 +112,7 @@ void FINUFFT_MAKEPLAN_(int *type, int *n_dims, BIGINT *n_modes, int *iflag, int 
   }
 }
 
-void FINUFFT_SETPTS_(FINUFFT_PLAN *plan, BIGINT *M, FLT *xj, FLT *yj, FLT *zj, BIGINT *nk, FLT *s, FLT *t, FLT *u, int *ier)
+void FINUFFT_SETPTS_(FINUFFT_PLAN *plan, BIGINT *M, FLT *xj, FLT *yj, FLT *zj, FLT *pj, FLT *qj, BIGINT *nk, FLT *s, FLT *t, FLT *u, FLT *v, FLT *w, int *ier)
 {
   if (!*plan) {
     fprintf(stderr,"%s fortran: finufft_plan unallocated!",__func__);
@@ -97,7 +121,7 @@ void FINUFFT_SETPTS_(FINUFFT_PLAN *plan, BIGINT *M, FLT *xj, FLT *yj, FLT *zj, B
   int nk_safe = 0;           // catches the case where user passes NULL in
   if (nk)
     nk_safe = *nk;
-  *ier = FINUFFT_SETPTS(*plan, *M, xj, yj, zj, nk_safe, s, t, u);
+  *ier = FINUFFT_SETPTS(*plan, *M, xj, yj, zj, pj, qj, nk_safe, s, t, u, v, w);
 }
 
 void FINUFFT_EXECUTE_(FINUFFT_PLAN *plan, CPX *weights, CPX *result, int *ier)
@@ -248,7 +272,86 @@ void FINUFFT3D3MANY_(int* ntransf,
   *ier = FINUFFT3D3MANY(*ntransf,*nj,x,y,z,c,*iflag,*eps,*nk,s,t,u,f,o);
 }
 
-  
+// --- 4D ---
+void FINUFFT4D1_(BIGINT* nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj, CPX* cj, int* iflag, FLT* eps,
+                 BIGINT* ms, BIGINT* mt, BIGINT* mu, BIGINT* mv, CPX* fk, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT4D1(*nj,xj,yj,zj,pj,cj,*iflag,*eps,*ms,*mt,*mu,*mv,fk,o);
+}
+
+void FINUFFT4D1MANY_(int* ntransf,
+                 BIGINT* nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj, CPX* cj, int* iflag, FLT* eps,
+                 BIGINT* ms, BIGINT* mt, BIGINT* mu, BIGINT* mv, CPX* fk, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT4D1MANY(*ntransf,*nj,xj,yj,zj,pj,cj,*iflag,*eps,*ms,*mt,*mu,*mv,fk,o);
+}
+
+void FINUFFT4D2_(BIGINT* nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj, CPX* cj, int* iflag, FLT* eps,
+                 BIGINT* ms, BIGINT* mt, BIGINT* mu, BIGINT* mv, CPX* fk, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT4D2(*nj,xj,yj,zj,pj,cj,*iflag,*eps,*ms,*mt,*mu,*mv,fk,o);
+}
+
+void FINUFFT4D2MANY_(int* ntransf,
+                 BIGINT* nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj, CPX* cj, int* iflag, FLT* eps,
+                 BIGINT* ms, BIGINT* mt, BIGINT* mu, BIGINT* mv, CPX* fk, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT4D2MANY(*ntransf,*nj,xj,yj,zj,pj,cj,*iflag,*eps,*ms,*mt,*mu,*mv,fk,o);
+}
+
+void FINUFFT4D3_(BIGINT* nj, FLT* x, FLT* y, FLT* z, FLT* p, CPX* c, int* iflag, FLT* eps,
+                 BIGINT* nk, FLT* s, FLT* t, FLT* u, FLT* v, CPX* f, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT4D3(*nj,x,y,z,p,c,*iflag,*eps,*nk,s,t,u,v,f,o);
+}
+
+void FINUFFT4D3MANY_(int* ntransf,
+                 BIGINT* nj, FLT* x, FLT* y, FLT* z, FLT* p, CPX* c, int* iflag, FLT* eps,
+                 BIGINT* nk, FLT* s, FLT* t, FLT* u, FLT* v, CPX* f, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT4D3MANY(*ntransf,*nj,x,y,z,p,c,*iflag,*eps,*nk,s,t,u,v,f,o);
+}
+
+// --- 5D ---
+void FINUFFT5D1_(BIGINT* nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj, FLT* qj, CPX* cj, int* iflag, FLT* eps,
+                 BIGINT* ms, BIGINT* mt, BIGINT* mu, BIGINT* mv, BIGINT* mw, CPX* fk, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT5D1(*nj,xj,yj,zj,pj,qj,cj,*iflag,*eps,*ms,*mt,*mu,*mv,*mw,fk,o);
+}
+
+void FINUFFT5D1MANY_(int* ntransf,
+                 BIGINT* nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj, FLT* qj, CPX* cj, int* iflag, FLT* eps,
+                 BIGINT* ms, BIGINT* mt, BIGINT* mu, BIGINT* mv, BIGINT* mw, CPX* fk, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT5D1MANY(*ntransf,*nj,xj,yj,zj,pj,qj,cj,*iflag,*eps,*ms,*mt,*mu,*mv,*mw,fk,o);
+}
+
+void FINUFFT5D2_(BIGINT* nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj, FLT* qj, CPX* cj, int* iflag, FLT* eps,
+                 BIGINT* ms, BIGINT* mt, BIGINT* mu, BIGINT* mv, BIGINT* mw, CPX* fk, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT5D2(*nj,xj,yj,zj,pj,qj,cj,*iflag,*eps,*ms,*mt,*mu,*mv,*mw,fk,o);
+}
+
+void FINUFFT5D2MANY_(int* ntransf,
+                 BIGINT* nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj, FLT* qj, CPX* cj, int* iflag, FLT* eps,
+                 BIGINT* ms, BIGINT* mt, BIGINT* mu, BIGINT* mv, BIGINT* mw, CPX* fk, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT5D2MANY(*ntransf,*nj,xj,yj,zj,pj,qj,cj,*iflag,*eps,*ms,*mt,*mu,*mv,*mw,fk,o);
+}
+
+void FINUFFT5D3_(BIGINT* nj, FLT* x, FLT* y, FLT* z, FLT* p, FLT* q, CPX* c, int* iflag, FLT* eps,
+                 BIGINT* nk, FLT* s, FLT* t, FLT* u, FLT* v, FLT* w, CPX* f, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT5D3(*nj,x,y,z,p,q,c,*iflag,*eps,*nk,s,t,u,v,w,f,o);
+}
+
+void FINUFFT5D3MANY_(int* ntransf,
+                 BIGINT* nj, FLT* x, FLT* y, FLT* z, FLT* p, FLT* q, CPX* c, int* iflag, FLT* eps,
+                 BIGINT* nk, FLT* s, FLT* t, FLT* u, FLT* v, FLT* w, CPX* f, nufft_opts* o, int* ier)
+{
+  *ier = FINUFFT5D3MANY(*ntransf,*nj,x,y,z,p,q,c,*iflag,*eps,*nk,s,t,u,v,w,f,o);
+} 
+
 #ifdef __cplusplus
 }
 #endif

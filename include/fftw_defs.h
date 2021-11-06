@@ -17,6 +17,8 @@
   #define FFTW_PLAN_1D fftwf_plan_dft_1d
   #define FFTW_PLAN_2D fftwf_plan_dft_2d
   #define FFTW_PLAN_3D fftwf_plan_dft_3d
+  #define FFTW_PLAN_4D fftwf_plan_dft_4d
+  #define FFTW_PLAN_5D fftwf_plan_dft_5d
   #define FFTW_PLAN_MANY_DFT fftwf_plan_many_dft
   #define FFTW_EX fftwf_execute
   #define FFTW_DE fftwf_destroy_plan
@@ -39,6 +41,8 @@
   #define FFTW_PLAN_1D fftw_plan_dft_1d
   #define FFTW_PLAN_2D fftw_plan_dft_2d
   #define FFTW_PLAN_3D fftw_plan_dft_3d
+  #define FFTW_PLAN_4D fftw_plan_dft_4d
+  #define FFTW_PLAN_5D fftw_plan_dft_5d
   #define FFTW_PLAN_MANY_DFT fftw_plan_many_dft
   #define FFTW_EX fftw_execute
   #define FFTW_DE fftw_destroy_plan

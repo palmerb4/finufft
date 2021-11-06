@@ -40,8 +40,8 @@ void spread_subproblem_5d(BIGINT off1,BIGINT off2, BIGINT off3, BIGINT off4, BIG
 			  FLT *kx0,FLT *ky0,FLT *kz0,FLT *kp0,FLT *kq0,FLT *dd0,
 			  const spread_opts& opts);
 void add_wrapped_subgrid(BIGINT offset1,BIGINT offset2,BIGINT offset3,BIGINT offset4,BIGINT offset5,
-			 BIGINT size1,BIGINT size2,BIGINT size3,BIGINT N1,
-			 BIGINT N2,BIGINT N3,FLT *data_uniform, FLT *du0);
+			 BIGINT size1,BIGINT size2,BIGINT size3,BIGINT size4,BIGINT size5,BIGINT N1,
+			 BIGINT N2,BIGINT N3,BIGINT N4,BIGINT N5,FLT *data_uniform, FLT *du0);
 void add_wrapped_subgrid_thread_safe(BIGINT offset1,BIGINT offset2,BIGINT offset3,BIGINT offset4,BIGINT offset5,
                                      BIGINT size1,BIGINT size2,BIGINT size3,BIGINT size4,BIGINT size5,BIGINT N1,
                                      BIGINT N2,BIGINT N3,BIGINT N4,BIGINT N5,FLT *data_uniform, FLT *du0);
@@ -53,7 +53,7 @@ void bin_sort_multithread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT 
               double bin_size_x,double bin_size_y,double bin_size_z,double bin_size_p,double bin_size_q, int debug,
               int nthr);
 void get_subgrid(BIGINT &offset1,BIGINT &offset2,BIGINT &offset3,BIGINT &offset4,BIGINT &offset5,BIGINT &size1,
-		 BIGINT &size2,BIGINT &size3,IGINT &size4,IGINT &size5,BIGINT M0,FLT* kx0,FLT* ky0,
+		 BIGINT &size2,BIGINT &size3,BIGINT &size4,BIGINT &size5,BIGINT M0,FLT* kx0,FLT* ky0,
 		 FLT* kz0,FLT* kp0,FLT* kq0,int ns, int ndims);
 
 
@@ -336,19 +336,19 @@ int spreadinterpSorted(BIGINT* sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BI
 
 // --------------------------------------------------------------------------
 int spreadSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, BIGINT N5, 
-		      FLT *data_uniform,BIGINT M, FLT *kx, FLT *ky, FLT *kz,
+		      FLT *data_uniform,BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT *kp, FLT *kq,
 		      FLT *data_nonuniform, spread_opts opts, int did_sort)
 // Spread NU pts in sorted order to a uniform grid. See spreadinterp() for doc.
 {
   CNTime timer;
-  int ndims = ndims_from_Ns(N1,N2,N3);
-  BIGINT N=N1*N2*N3;            // output array size
+  int ndims = ndims_from_Ns(N1,N2,N3,N4,N5);
+  BIGINT N=N1*N2*N3*N4*N5;      // output array size
   int ns=opts.nspread;          // abbrev. for w, kernel width
   int nthr = MY_OMP_GET_MAX_THREADS();  // # threads to use to spread
   if (opts.nthreads>0)
     nthr = min(nthr,opts.nthreads);     // user override up to max avail
   if (opts.debug)
-    printf("\tspread %dD (M=%lld; N1=%lld,N2=%lld,N3=%lld; pir=%d), nthr=%d\n",ndims,(long long)M,(long long)N1,(long long)N2,(long long)N3,opts.pirange,nthr);
+    printf("\tspread %dD (M=%lld; N1=%lld,N2=%lld,N3=%lld,N4=%lld,N5=%lld; pir=%d), nthr=%d\n",ndims,(long long)M,(long long)N1,(long long)N2,(long long)N3,(long long)N4,(long long)N5,opts.pirange,nthr);
   
   timer.start();
   for (BIGINT i=0; i<2*N; i++) // zero the output array. std::fill is no faster
@@ -394,33 +394,43 @@ int spreadSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4
       for (int isub=0; isub<nb; isub++) {   // Main loop through the subproblems
         BIGINT M0 = brk[isub+1]-brk[isub];  // # NU pts in this subproblem
         // copy the location and data vectors for the nonuniform points
-        FLT *kx0=(FLT*)malloc(sizeof(FLT)*M0), *ky0=NULL, *kz0=NULL;
+        FLT *kx0=(FLT*)malloc(sizeof(FLT)*M0), *ky0=NULL, *kz0=NULL, *kp0=NULL, *kq0=NULL;
         if (N2>1)
           ky0=(FLT*)malloc(sizeof(FLT)*M0);
         if (N3>1)
           kz0=(FLT*)malloc(sizeof(FLT)*M0);
+        if (N4>1)
+          kp0=(FLT*)malloc(sizeof(FLT)*M0);
+        if (N5>1)
+          kq0=(FLT*)malloc(sizeof(FLT)*M0);
         FLT *dd0=(FLT*)malloc(sizeof(FLT)*M0*2);    // complex strength data
         for (BIGINT j=0; j<M0; j++) {           // todo: can avoid this copying?
           BIGINT kk=sort_indices[j+brk[isub]];  // NU pt from subprob index list
           kx0[j]=FOLDRESCALE(kx[kk],N1,opts.pirange);
           if (N2>1) ky0[j]=FOLDRESCALE(ky[kk],N2,opts.pirange);
           if (N3>1) kz0[j]=FOLDRESCALE(kz[kk],N3,opts.pirange);
+          if (N4>1) kp0[j]=FOLDRESCALE(kp[kk],N4,opts.pirange);
+          if (N5>1) kq0[j]=FOLDRESCALE(kq[kk],N5,opts.pirange);
           dd0[j*2]=data_nonuniform[kk*2];     // real part
           dd0[j*2+1]=data_nonuniform[kk*2+1]; // imag part
         }
         // get the subgrid which will include padding by roughly nspread/2
-        BIGINT offset1,offset2,offset3,size1,size2,size3; // get_subgrid sets
-        get_subgrid(offset1,offset2,offset3,size1,size2,size3,M0,kx0,ky0,kz0,ns,ndims);  // sets offsets and sizes
+        BIGINT offset1,offset2,offset3,offset4,offset5,size1,size2,size3,size4,size5; // get_subgrid sets
+        get_subgrid(offset1,offset2,offset3,offset4,offset5,size1,size2,size3,size4,size5,M0,kx0,ky0,kz0,kp0,kq0,ns,ndims);  // sets offsets and sizes
         if (opts.debug>1) { // verbose
           if (ndims==1)
             printf("\tsubgrid: off %lld\t siz %lld\t #NU %lld\n",(long long)offset1,(long long)size1,(long long)M0);
           else if (ndims==2)
             printf("\tsubgrid: off %lld,%lld\t siz %lld,%lld\t #NU %lld\n",(long long)offset1,(long long)offset2,(long long)size1,(long long)size2,(long long)M0);
-          else
+          else if (ndims==3)
             printf("\tsubgrid: off %lld,%lld,%lld\t siz %lld,%lld,%lld\t #NU %lld\n",(long long)offset1,(long long)offset2,(long long)offset3,(long long)size1,(long long)size2,(long long)size3,(long long)M0);
-	}
+          else if (ndims==4)
+            printf("\tsubgrid: off %lld,%lld,%lld,%lld\t siz %lld,%lld,%lld,%lld\t #NU %lld\n",(long long)offset1,(long long)offset2,(long long)offset3,(long long)offset4,(long long)size1,(long long)size2,(long long)size3,(long long)size4,(long long)M0);
+          else if (ndims==5)
+            printf("\tsubgrid: off %lld,%lld,%lld,%lld,%lld\t siz %lld,%lld,%lld,%lld,%lld\t #NU %lld\n",(long long)offset1,(long long)offset2,(long long)offset3,(long long)offset4,(long long)offset5,(long long)size1,(long long)size2,(long long)size3,(long long)size4,(long long)size5,(long long)M0);		
+  }
         // allocate output data for this subgrid
-        FLT *du0=(FLT*)malloc(sizeof(FLT)*2*size1*size2*size3); // complex
+        FLT *du0=(FLT*)malloc(sizeof(FLT)*2*size1*size2*size3*size4*size5); // complex
         
         // Spread to subgrid without need for bounds checking or wrapping
         if (!(opts.flags & TF_OMIT_SPREADING)) {
@@ -428,17 +438,21 @@ int spreadSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4
             spread_subproblem_1d(offset1,size1,du0,M0,kx0,dd0,opts);
           else if (ndims==2)
             spread_subproblem_2d(offset1,offset2,size1,size2,du0,M0,kx0,ky0,dd0,opts);
-          else
+          else if (ndims==3)
             spread_subproblem_3d(offset1,offset2,offset3,size1,size2,size3,du0,M0,kx0,ky0,kz0,dd0,opts);
+          else if (ndims==4)
+            spread_subproblem_4d(offset1,offset2,offset3,offset4,size1,size2,size3,size4,du0,M0,kx0,ky0,kz0,kp0,dd0,opts);
+          else if (ndims==5)
+            spread_subproblem_5d(offset1,offset2,offset3,offset4,offset5,size1,size2,size3,size4,size5,du0,M0,kx0,ky0,kz0,kp0,kq0,dd0,opts);
 	}
         
         // do the adding of subgrid to output
         if (!(opts.flags & TF_OMIT_WRITE_TO_GRID)) {
           if (nthr > opts.atomic_threshold)   // see above for debug reporting
-            add_wrapped_subgrid_thread_safe(offset1,offset2,offset3,size1,size2,size3,N1,N2,N3,data_uniform,du0);   // R Blackwell's atomic version
+            add_wrapped_subgrid_thread_safe(offset1,offset2,offset3,offset4,offset5,size1,size2,size3,size4,size5,N1,N2,N3,N4,N5,data_uniform,du0);   // R Blackwell's atomic version
           else {
 #pragma omp critical
-            add_wrapped_subgrid(offset1,offset2,offset3,size1,size2,size3,N1,N2,N3,data_uniform,du0);
+            add_wrapped_subgrid(offset1,offset2,offset3,offset4,offset5,size1,size2,size3,size4,size5,N1,N2,N3,N4,N5,data_uniform,du0);
           }
         }
 
@@ -448,6 +462,8 @@ int spreadSorted(BIGINT* sort_indices,BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4
         free(kx0);
         if (N2>1) free(ky0);
         if (N3>1) free(kz0); 
+        if (N4>1) free(kp0); 
+        if (N5>1) free(kq0); 
       }     // end main loop over subprobs
       if (opts.debug) printf("\tt1 fancy spread: \t%.3g s (%d subprobs)\n",timer.elapsedsec(), nb);
     }   // end of choice of which t1 spread type to use
@@ -819,10 +835,10 @@ void interp_square(FLT *target,FLT *du, FLT *ker1, FLT *ker2, BIGINT i1,BIGINT i
     for (int dy=0; dy<ns; dy++) {
       BIGINT j = N1*(i2+dy) + i1;
       for (int dx=0; dx<ns; dx++) {
-	FLT k = ker1[dx]*ker2[dy];
-	out[0] += du[2*j] * k;
-	out[1] += du[2*j+1] * k;
-	++j;
+        FLT k = ker1[dx]*ker2[dy];
+        out[0] += du[2*j] * k;
+        out[1] += du[2*j+1] * k;
+        ++j;
       }
     }
   } else {                         // wraps somewhere: use ptr list (slower)
@@ -839,10 +855,10 @@ void interp_square(FLT *target,FLT *du, FLT *ker1, FLT *ker2, BIGINT i1,BIGINT i
     for (int dy=0; dy<ns; dy++) {      // use the pts lists
       BIGINT oy = N1*j2[dy];           // offset due to y
       for (int dx=0; dx<ns; dx++) {
-	FLT k = ker1[dx]*ker2[dy];
-	BIGINT j = oy + j1[dx];
-	out[0] += du[2*j] * k;
-	out[1] += du[2*j+1] * k;
+        FLT k = ker1[dx]*ker2[dy];
+        BIGINT j = oy + j1[dx];
+        out[0] += du[2*j] * k;
+        out[1] += du[2*j+1] * k;
       }
     }
   }
@@ -867,14 +883,14 @@ void interp_cube(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3,
     for (int dz=0; dz<ns; dz++) {
       BIGINT oz = N1*N2*(i3+dz);        // offset due to z
       for (int dy=0; dy<ns; dy++) {
-	BIGINT j = oz + N1*(i2+dy) + i1;
-	FLT ker23 = ker2[dy]*ker3[dz];
-	for (int dx=0; dx<ns; dx++) {
-	  FLT k = ker1[dx]*ker23;
-	  out[0] += du[2*j] * k;
-	  out[1] += du[2*j+1] * k;
-	  ++j;
-	}
+        BIGINT j = oz + N1*(i2+dy) + i1;
+        FLT ker23 = ker2[dy]*ker3[dz];
+        for (int dx=0; dx<ns; dx++) {
+          FLT k = ker1[dx]*ker23;
+          out[0] += du[2*j] * k;
+          out[1] += du[2*j+1] * k;
+          ++j;
+        }
       }
     }
   } else {                         // wraps somewhere: use ptr list (slower)
@@ -915,30 +931,34 @@ void interp_hyper_cube4D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, F
 // using ns*ns*ns*ns hypercube of real weights
 // in ker. out must be size 2 (real,imag), and du
 // of size 2*N1*N2*N3*N4 (alternating real,imag). i1 is the left-most index in
-// [0,N1), i2 the bottom index in [0,N2), i3 lowest in [0,N3) , i4 lowest in [0,N4).
-// Periodic wrapping in the du array is applied, assuming N1,N2,N3>=ns.
+// [0,N1), i2 the bottom index in [0,N2), i3 lowest in [0,N3), i4 lowest in [0,N4).
+// Periodic wrapping in the du array is applied, assuming N1,N2,N3,N4>=ns.
 // dx,dy,dz,dp indices into ker array, j index in complex du array.
 // Palmer 9/14/21
 {
   FLT out[] = {0.0, 0.0};  
-  if (i1>=0 && i1+ns<=N1 && i2>=0 && i2+ns<=N2 && i3>=0 && i3+ns<=N3&& i4>=0 && i4+ns<=N4) {
-    // no wrapping: avoid ptrs
-    for (int dz=0; dz<ns; dz++) {
-      BIGINT oz = N1*N2*(i3+dz);        // offset due to z
-      for (int dy=0; dy<ns; dy++) {
-	BIGINT j = oz + N1*(i2+dy) + i1;
-	FLT ker23 = ker2[dy]*ker3[dz];
-	for (int dx=0; dx<ns; dx++) {
-	  FLT k = ker1[dx]*ker23;
-	  out[0] += du[2*j] * k;
-	  out[1] += du[2*j+1] * k;
-	  ++j;
-	}
+  if (i1>=0 && i1+ns<=N1 && i2>=0 && i2+ns<=N2 && i3>=0 && i3+ns<=N3 && i4>=0 && i4+ns<=N4) {
+    // no wrapping: avoid ptrs 
+    for (int dp=0; dp<ns; dp++) {
+      BIGINT op = N1*N2*N3*(i4+dp);       // offset due to p
+      for (int dz=0; dz<ns; dz++) {
+        BIGINT oz = N1*N2*(i3+dz);        // offset due to z
+        FLT ker34 = ker3[dz]*ker4[dp];
+        for (int dy=0; dy<ns; dy++) {
+          BIGINT j = op + oz + N1*(i2+dy) + i1;
+          FLT ker234 = ker2[dy]*ker34;
+          for (int dx=0; dx<ns; dx++) {
+            FLT k = ker1[dx]*ker234;
+            out[0] += du[2*j] * k;
+            out[1] += du[2*j+1] * k;
+            ++j;
+          }
+        }
       }
     }
   } else {                         // wraps somewhere: use ptr list (slower)
-    BIGINT j1[MAX_NSPREAD], j2[MAX_NSPREAD], j3[MAX_NSPREAD];   // 1d ptr lists
-    BIGINT x=i1, y=i2, z=i3;         // initialize coords
+    BIGINT j1[MAX_NSPREAD], j2[MAX_NSPREAD], j3[MAX_NSPREAD], j4[MAX_NSPREAD];   // 1d ptr lists
+    BIGINT x=i1, y=i2, z=i3, p=i4;      // initialize coords
     for (int d=0; d<ns; d++) {          // set up ptr lists
       if (x<0) x+=N1;
       if (x>=N1) x-=N1;
@@ -949,18 +969,25 @@ void interp_hyper_cube4D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, F
       if (z<0) z+=N3;
       if (z>=N3) z-=N3;
       j3[d] = z++;
+      if (p<0) p+=N4;
+      if (p>=N4) p-=N4;
+      j4[d] = p++;
     }
-    for (int dz=0; dz<ns; dz++) {             // use the pts lists
-      BIGINT oz = N1*N2*j3[dz];               // offset due to z
-      for (int dy=0; dy<ns; dy++) {
-	BIGINT oy = oz + N1*j2[dy];           // offset due to y & z
-	FLT ker23 = ker2[dy]*ker3[dz];	
-	for (int dx=0; dx<ns; dx++) {
-	  FLT k = ker1[dx]*ker23;
-	  BIGINT j = oy + j1[dx];
-	  out[0] += du[2*j] * k;
-	  out[1] += du[2*j+1] * k;
-	}
+    for (int dp=0; dp<ns; dp++) {               // use the pts lists
+      BIGINT op = N1*N2*N3*j4[dp];              // offset due to p
+      for (int dz=0; dz<ns; dz++) {             
+        BIGINT oz = N1*N2*j3[dz];               // offset due to z
+        FLT ker34 = ker3[dz]*ker4[dp];
+        for (int dy=0; dy<ns; dy++) {
+          BIGINT oy = op + oz + N1*j2[dy];      // offset due to y & z
+          FLT ker234 = ker2[dy]*ker34;
+          for (int dx=0; dx<ns; dx++) {
+            FLT k = ker1[dx]*ker234;
+            BIGINT j = oy + j1[dx];
+            out[0] += du[2*j] * k;
+            out[1] += du[2*j+1] * k;
+          }
+        }
       }
     }
   }
@@ -981,24 +1008,32 @@ void interp_hyper_cube5D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, F
 {
   FLT out[] = {0.0, 0.0};  
   if (i1>=0 && i1+ns<=N1 && i2>=0 && i2+ns<=N2 && i3>=0 && i3+ns<=N3 && i4>=0 && i4+ns<=N4 && i5>=0 && i5+ns<=N5) {
-    // no wrapping: avoid ptrs
-    for (int dz=0; dz<ns; dz++) {
-      BIGINT oz = N1*N2*(i3+dz);        // offset due to z
-      for (int dy=0; dy<ns; dy++) {
-	BIGINT j = oz + N1*(i2+dy) + i1;
-	FLT ker23 = ker2[dy]*ker3[dz];
-	for (int dx=0; dx<ns; dx++) {
-	  FLT k = ker1[dx]*ker23;
-	  out[0] += du[2*j] * k;
-	  out[1] += du[2*j+1] * k;
-	  ++j;
-	}
+    // no wrapping: avoid ptrs 
+    for (int dq=0; dq<ns; dq++) {
+      BIGINT oq = N1*N2*N3*N4*(i5+dq);      // offset due to q
+      for (int dp=0; dp<ns; dp++) {
+        BIGINT op = N1*N2*N3*(i4+dp);       // offset due to p
+        FLT ker45 = ker4[dp]*ker5[dq];
+        for (int dz=0; dz<ns; dz++) {
+          BIGINT oz = N1*N2*(i3+dz);        // offset due to z
+          FLT ker345 = ker3[dz]*ker45;
+          for (int dy=0; dy<ns; dy++) {
+            BIGINT j = oq + op + oz + N1*(i2+dy) + i1;
+            FLT ker2345 = ker2[dy]*ker345;
+            for (int dx=0; dx<ns; dx++) {
+              FLT k = ker1[dx]*ker2345;
+              out[0] += du[2*j] * k;
+              out[1] += du[2*j+1] * k;
+              ++j;
+            }
+          }
+        }
       }
     }
   } else {                         // wraps somewhere: use ptr list (slower)
-    BIGINT j1[MAX_NSPREAD], j2[MAX_NSPREAD], j3[MAX_NSPREAD];   // 1d ptr lists
-    BIGINT x=i1, y=i2, z=i3;         // initialize coords
-    for (int d=0; d<ns; d++) {          // set up ptr lists
+    BIGINT j1[MAX_NSPREAD], j2[MAX_NSPREAD], j3[MAX_NSPREAD], j4[MAX_NSPREAD], j5[MAX_NSPREAD];   // 1d ptr lists
+    BIGINT x=i1, y=i2, z=i3, p=i4, q=i5; // initialize coords
+    for (int d=0; d<ns; d++) {           // set up ptr lists
       if (x<0) x+=N1;
       if (x>=N1) x-=N1;
       j1[d] = x++;
@@ -1008,18 +1043,32 @@ void interp_hyper_cube5D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, F
       if (z<0) z+=N3;
       if (z>=N3) z-=N3;
       j3[d] = z++;
+      if (p<0) p+=N4;
+      if (p>=N4) p-=N4;
+      j4[d] = p++;
+      if (q<0) q+=N5;
+      if (q>=N5) q-=N5;
+      j4[d] = q++;
     }
-    for (int dz=0; dz<ns; dz++) {             // use the pts lists
-      BIGINT oz = N1*N2*j3[dz];               // offset due to z
-      for (int dy=0; dy<ns; dy++) {
-	BIGINT oy = oz + N1*j2[dy];           // offset due to y & z
-	FLT ker23 = ker2[dy]*ker3[dz];	
-	for (int dx=0; dx<ns; dx++) {
-	  FLT k = ker1[dx]*ker23;
-	  BIGINT j = oy + j1[dx];
-	  out[0] += du[2*j] * k;
-	  out[1] += du[2*j+1] * k;
-	}
+    for (int dq=0; dq<ns; dq++) {               // use the pts lists
+      BIGINT oq = N1*N2*N3*N4*(i5+dq);          // offset due to q
+      for (int dp=0; dp<ns; dp++) {             
+        BIGINT op = N1*N2*N3*j4[dp];            // offset due to p
+        FLT ker45 = ker4[dp]*ker5[dq];
+        for (int dz=0; dz<ns; dz++) {             
+          BIGINT oz = N1*N2*j3[dz];             // offset due to z
+          FLT ker345 = ker3[dz]*ker45;
+          for (int dy=0; dy<ns; dy++) {
+            BIGINT oy = op + oz + N1*j2[dy];    // offset due to y & z
+            FLT ker2345 = ker2[dy]*ker345;
+            for (int dx=0; dx<ns; dx++) {
+              FLT k = ker1[dx]*ker2345;
+              BIGINT j = oy + j1[dx];
+              out[0] += du[2*j] * k;
+              out[1] += du[2*j+1] * k;
+            }
+          }
+        }
       }
     }
   }
@@ -1204,7 +1253,7 @@ void spread_subproblem_4d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
 			  FLT *kx,FLT *ky,FLT *kz,FLT *kp,FLT *dd,
 			  const spread_opts& opts)
 /* spreader from dd (NU) to du (uniform) in 4D without wrapping.
-   See above docs/notes for spread_subproblem_2d.
+   See above docs/notes for spread_subproblem_3d.
    kx,ky,kz,kp (size M) are NU locations in [off+ns/2,off+size-1-ns/2] in each dim.
    dd (size M complex) are complex source strengths
    du (size size1*size2*size3*size4) is uniform complex output array
@@ -1212,15 +1261,16 @@ void spread_subproblem_4d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
 {
   int ns=opts.nspread;
   FLT ns2 = (FLT)ns/2;          // half spread width
-  for (BIGINT i=0;i<2*size1*size2*size3;++i)
+  for (BIGINT i=0;i<2*size1*size2*size3*size4;++i)
     du[i] = 0.0;
-  FLT kernel_args[3*MAX_NSPREAD];
+  FLT kernel_args[4*MAX_NSPREAD];
   // Kernel values stored in consecutive memory. This allows us to compute
-  // values in all three directions in a single kernel evaluation call.
-  FLT kernel_values[3*MAX_NSPREAD];
+  // values in all four directions in a single kernel evaluation call.
+  FLT kernel_values[4*MAX_NSPREAD];
   FLT *ker1 = kernel_values;
   FLT *ker2 = kernel_values + ns;
   FLT *ker3 = kernel_values + 2*ns;  
+  FLT *ker4 = kernel_values + 3*ns;  
   for (BIGINT i=0; i<M; i++) {           // loop over NU pts
     FLT re0 = dd[2*i];
     FLT im0 = dd[2*i+1];
@@ -1228,18 +1278,22 @@ void spread_subproblem_4d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
     BIGINT i1 = (BIGINT)std::ceil(kx[i] - ns2);   // fine grid start indices
     BIGINT i2 = (BIGINT)std::ceil(ky[i] - ns2);
     BIGINT i3 = (BIGINT)std::ceil(kz[i] - ns2);
+    BIGINT i4 = (BIGINT)std::ceil(kp[i] - ns2);
     FLT x1 = (FLT)i1 - kx[i];
     FLT x2 = (FLT)i2 - ky[i];
     FLT x3 = (FLT)i3 - kz[i];
+    FLT x4 = (FLT)i4 - kp[i];
     if (opts.kerevalmeth==0) {          // faster Horner poly method
       set_kernel_args(kernel_args, x1, opts);
       set_kernel_args(kernel_args+ns, x2, opts);
       set_kernel_args(kernel_args+2*ns, x3, opts);
-      evaluate_kernel_vector(kernel_values, kernel_args, opts, 3*ns);
+      set_kernel_args(kernel_args+3*ns, x4, opts);
+      evaluate_kernel_vector(kernel_values, kernel_args, opts, 4*ns);
     } else {
       eval_kernel_vec_Horner(ker1,x1,ns,opts);
       eval_kernel_vec_Horner(ker2,x2,ns,opts);
       eval_kernel_vec_Horner(ker3,x3,ns,opts);
+      eval_kernel_vec_Horner(ker4,x4,ns,opts);
     }
     // Combine kernel with complex source value to simplify inner loop
     FLT ker1val[2*MAX_NSPREAD];    // here 2* is because of complex
@@ -1248,15 +1302,19 @@ void spread_subproblem_4d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
       ker1val[2*i+1] = im0*ker1[i];	
     }    
     // critical inner loop:
-    for (int dz=0; dz<ns; ++dz) {
-      BIGINT oz = size1*size2*(i3-off3+dz);        // offset due to z
-      for (int dy=0; dy<ns; ++dy) {
-	BIGINT j = oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid
-	FLT kerval = ker2[dy]*ker3[dz];
-	FLT *trg = du+2*j;
-	for (int dx=0; dx<2*ns; ++dx) {
-	  trg[dx] += kerval*ker1val[dx];
-	}	
+    for (int dp=0; dp<ns; ++dp) {
+      BIGINT op = size1*size2*size3*(i4-off4+dp);    // offset due to p
+      for (int dz=0; dz<ns; ++dz) {
+        BIGINT oz = size1*size2*(i3-off3+dz);        // offset due to z
+        FLT ker34 = ker3[dz]*ker4[dp];
+        for (int dy=0; dy<ns; ++dy) {
+          BIGINT j = op + oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid (DANGER)
+          FLT kerval = ker2[dy]*ker34;
+          FLT *trg = du+2*j;
+          for (int dx=0; dx<2*ns; ++dx) {
+            trg[dx] += kerval*ker1val[dx];
+          }	
+        }
       }
     }
   }
@@ -1275,15 +1333,17 @@ void spread_subproblem_5d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
 {
   int ns=opts.nspread;
   FLT ns2 = (FLT)ns/2;          // half spread width
-  for (BIGINT i=0;i<2*size1*size2*size3;++i)
+  for (BIGINT i=0;i<2*size1*size2*size3*size4*size5;++i)
     du[i] = 0.0;
-  FLT kernel_args[3*MAX_NSPREAD];
+  FLT kernel_args[5*MAX_NSPREAD];
   // Kernel values stored in consecutive memory. This allows us to compute
-  // values in all three directions in a single kernel evaluation call.
-  FLT kernel_values[3*MAX_NSPREAD];
+  // values in all five directions in a single kernel evaluation call.
+  FLT kernel_values[5*MAX_NSPREAD];
   FLT *ker1 = kernel_values;
   FLT *ker2 = kernel_values + ns;
   FLT *ker3 = kernel_values + 2*ns;  
+  FLT *ker4 = kernel_values + 3*ns;  
+  FLT *ker5 = kernel_values + 4*ns;  
   for (BIGINT i=0; i<M; i++) {           // loop over NU pts
     FLT re0 = dd[2*i];
     FLT im0 = dd[2*i+1];
@@ -1291,18 +1351,27 @@ void spread_subproblem_5d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
     BIGINT i1 = (BIGINT)std::ceil(kx[i] - ns2);   // fine grid start indices
     BIGINT i2 = (BIGINT)std::ceil(ky[i] - ns2);
     BIGINT i3 = (BIGINT)std::ceil(kz[i] - ns2);
+    BIGINT i4 = (BIGINT)std::ceil(kp[i] - ns2);
+    BIGINT i5 = (BIGINT)std::ceil(kq[i] - ns2);
     FLT x1 = (FLT)i1 - kx[i];
     FLT x2 = (FLT)i2 - ky[i];
     FLT x3 = (FLT)i3 - kz[i];
+    FLT x4 = (FLT)i4 - kp[i];
+    FLT x5 = (FLT)i5 - kq[i];
     if (opts.kerevalmeth==0) {          // faster Horner poly method
       set_kernel_args(kernel_args, x1, opts);
       set_kernel_args(kernel_args+ns, x2, opts);
       set_kernel_args(kernel_args+2*ns, x3, opts);
-      evaluate_kernel_vector(kernel_values, kernel_args, opts, 3*ns);
+      set_kernel_args(kernel_args+3*ns, x4, opts);
+      set_kernel_args(kernel_args+4*ns, x5, opts);
+      evaluate_kernel_vector(kernel_values, kernel_args, opts, 4*ns);
+      evaluate_kernel_vector(kernel_values, kernel_args, opts, 5*ns);
     } else {
       eval_kernel_vec_Horner(ker1,x1,ns,opts);
       eval_kernel_vec_Horner(ker2,x2,ns,opts);
       eval_kernel_vec_Horner(ker3,x3,ns,opts);
+      eval_kernel_vec_Horner(ker4,x4,ns,opts);
+      eval_kernel_vec_Horner(ker5,x5,ns,opts);
     }
     // Combine kernel with complex source value to simplify inner loop
     FLT ker1val[2*MAX_NSPREAD];    // here 2* is because of complex
@@ -1311,15 +1380,23 @@ void spread_subproblem_5d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
       ker1val[2*i+1] = im0*ker1[i];	
     }    
     // critical inner loop:
-    for (int dz=0; dz<ns; ++dz) {
-      BIGINT oz = size1*size2*(i3-off3+dz);        // offset due to z
-      for (int dy=0; dy<ns; ++dy) {
-	BIGINT j = oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid
-	FLT kerval = ker2[dy]*ker3[dz];
-	FLT *trg = du+2*j;
-	for (int dx=0; dx<2*ns; ++dx) {
-	  trg[dx] += kerval*ker1val[dx];
-	}	
+    for (int dq=0; dq<ns; ++dq) {
+      BIGINT oq = size1*size2*size3*size4*(i5-off5+dq); // offset due to q
+      for (int dp=0; dp<ns; ++dp) {
+        BIGINT op = size1*size2*size3*(i4-off4+dp);     // offset due to p
+        FLT ker45 = ker4[dp]*ker5[dq];
+        for (int dz=0; dz<ns; ++dz) {
+          BIGINT oz = size1*size2*(i3-off3+dz);         // offset due to z
+          FLT ker345 = ker3[dz]*ker45;
+          for (int dy=0; dy<ns; ++dy) {
+            BIGINT j = oq + op + oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid (DANGER this isn't correct)
+            FLT kerval = ker2[dy]*ker345;
+            FLT *trg = du+2*j;
+            for (int dx=0; dx<2*ns; ++dx) {
+              trg[dx] += kerval*ker1val[dx];
+            }	
+          }
+        }
       }
     }
   }
@@ -1334,10 +1411,11 @@ void add_wrapped_subgrid(BIGINT offset1,BIGINT offset2,BIGINT offset3,BIGINT off
    size1,2,3,4,5 give the size of subgrid.
    Works in all dims. Not thread-safe and must be called inside omp critical.
    Barnett 3/27/18 made separate routine, tried to speed up inner loop.
+   Palmer 10/12/21 expanded to 5 dimensions
 */
 {
-  std::vector<BIGINT> o2(size2), o3(size3);
-  BIGINT y=offset2, z=offset3;    // fill wrapped ptr lists in slower dims y,z...
+  std::vector<BIGINT> o2(size2), o3(size3), o4(size4), o5(size5);
+  BIGINT y=offset2, z=offset3, p=offset4, q=offset5;    // fill wrapped ptr lists in slower dims y,z,p,q...
   for (int i=0; i<size2; ++i) {
     if (y<0) y+=N2;
     if (y>=N2) y-=N2;
@@ -1348,24 +1426,40 @@ void add_wrapped_subgrid(BIGINT offset1,BIGINT offset2,BIGINT offset3,BIGINT off
     if (z>=N3) z-=N3;
     o3[i] = z++;
   }
+  for (int i=0; i<size4; ++i) {
+    if (p<0) p+=N4;
+    if (p>=N4) p-=N4;
+    o4[i] = p++;
+  }
+  for (int i=0; i<size5; ++i) {
+    if (q<0) q+=N5;
+    if (q>=N4) q-=N5;
+    o5[i] = p++;
+  }
   BIGINT nlo = (offset1<0) ? -offset1 : 0;          // # wrapping below in x
   BIGINT nhi = (offset1+size1>N1) ? offset1+size1-N1 : 0;    // " above in x
-  // this triple loop works in all dims
-  for (int dz=0; dz<size3; dz++) {       // use ptr lists in each axis
-    BIGINT oz = N1*N2*o3[dz];            // offset due to z (0 in <3D)
-    for (int dy=0; dy<size2; dy++) {
-      BIGINT oy = oz + N1*o2[dy];        // off due to y & z (0 in 1D)
-      FLT *out = data_uniform + 2*oy;
-      FLT *in  = du0 + 2*size1*(dy + size2*dz);   // ptr to subgrid array
-      BIGINT o = 2*(offset1+N1);         // 1d offset for output
-      for (int j=0; j<2*nlo; j++)        // j is really dx/2 (since re,im parts)
-	out[j+o] += in[j];
-      o = 2*offset1;
-      for (int j=2*nlo; j<2*(size1-nhi); j++)
-	out[j+o] += in[j];
-      o = 2*(offset1-N1);
-      for (int j=2*(size1-nhi); j<2*size1; j++)
-      	out[j+o] += in[j];
+  // this quadruple loop works in all dims
+  for (int dq=0; dq<size5; dq++) {         // use ptr lists in each axis
+    BIGINT oq = N1*N2*N3*N4*o5[dq];          // offset due to q (0 in <5D)
+    for (int dp=0; dp<size4; dp++) {         // use ptr lists in each axis
+      BIGINT op = N1*N2*N3*o4[dp];           // offset due to p (0 in <4D)
+      for (int dz=0; dz<size3; dz++) {       
+        BIGINT oz = N1*N2*o3[dz];            // offset due to z (0 in <3D)
+        for (int dy=0; dy<size2; dy++) {
+          BIGINT oy = oq + op + oz + N1*o2[dy];   // off due to y & z & p & q (0 in 1D)
+          FLT *out = data_uniform + 2*oy;
+          FLT *in  = du0 + 2*size1*(dy + size2*(dz + size3*(dp + size4*dq)));   // ptr to subgrid array (DANGER this may not be correct)
+          BIGINT o = 2*(offset1+N1);         // 1d offset for output
+          for (int j=0; j<2*nlo; j++)        // j is really dx/2 (since re,im parts)
+            out[j+o] += in[j];
+          o = 2*offset1;
+          for (int j=2*nlo; j<2*(size1-nhi); j++)
+            out[j+o] += in[j];
+          o = 2*(offset1-N1);
+          for (int j=2*(size1-nhi); j<2*size1; j++)
+            out[j+o] += in[j];
+        }
+      }
     }
   }
 }
@@ -1381,8 +1475,8 @@ void add_wrapped_subgrid_thread_safe(BIGINT offset1,BIGINT offset2,BIGINT offset
    using atomic writes (R Blackwell, Nov 2020).
 */
 {
-  std::vector<BIGINT> o2(size2), o3(size3);
-  BIGINT y=offset2, z=offset3;    // fill wrapped ptr lists in slower dims y,z...
+  std::vector<BIGINT> o2(size2), o3(size3), o4(size3), o5(size3);
+  BIGINT y=offset2, z=offset3, p=offset4, q=offset5;    // fill wrapped ptr lists in slower dims y,z...
   for (int i=0; i<size2; ++i) {
     if (y<0) y+=N2;
     if (y>=N2) y-=N2;
@@ -1393,29 +1487,46 @@ void add_wrapped_subgrid_thread_safe(BIGINT offset1,BIGINT offset2,BIGINT offset
     if (z>=N3) z-=N3;
     o3[i] = z++;
   }
+  for (int i=0; i<size4; ++i) {
+    if (p<0) p+=N4;
+    if (p>=N4) p-=N4;
+    o4[i] = p++;
+  }
+  for (int i=0; i<size5; ++i) {
+    if (q<0) q+=N5;
+    if (q>=N5) q-=N5;
+    o5[i] = q++;
+  }
   BIGINT nlo = (offset1<0) ? -offset1 : 0;          // # wrapping below in x
   BIGINT nhi = (offset1+size1>N1) ? offset1+size1-N1 : 0;    // " above in x
   // this triple loop works in all dims
-  for (int dz=0; dz<size3; dz++) {       // use ptr lists in each axis
-    BIGINT oz = N1*N2*o3[dz];            // offset due to z (0 in <3D)
-    for (int dy=0; dy<size2; dy++) {
-      BIGINT oy = oz + N1*o2[dy];        // off due to y & z (0 in 1D)
-      FLT *out = data_uniform + 2*oy;
-      FLT *in  = du0 + 2*size1*(dy + size2*dz);   // ptr to subgrid array
-      BIGINT o = 2*(offset1+N1);         // 1d offset for output
-      for (int j=0; j<2*nlo; j++) { // j is really dx/2 (since re,im parts)
-#pragma omp atomic
-        out[j + o] += in[j];
-      }
-      o = 2*offset1;
-      for (int j=2*nlo; j<2*(size1-nhi); j++) {
-#pragma omp atomic
-        out[j + o] += in[j];
-      }
-      o = 2*(offset1-N1);
-      for (int j=2*(size1-nhi); j<2*size1; j++) {
-#pragma omp atomic
-        out[j+o] += in[j];
+  for (int dq=0; dq<size5; dq++) {       // use ptr lists in each axis
+    BIGINT oq = N1*N2*N4*N5*o5[dq];      // offset due to q (0 in <5D)
+    for (int dp=0; dp<size4; dp++) {       // use ptr lists in each axis 
+      BIGINT op = N1*N2*N3*o4[dp];            // offset due to p (0 in <4D)
+      for (int dz=0; dz<size3; dz++) {       // use ptr lists in each axis
+        BIGINT oz = N1*N2*o3[dz];            // offset due to z (0 in <3D)
+        for (int dy=0; dy<size2; dy++) {
+          BIGINT oy = oz + N1*o2[dy];        // off due to y & z (0 in 1D)
+          FLT *out = data_uniform + 2*oy;
+          FLT *in  = du0 + 2*size1*(dy + size2*(dz + size3*(dp + size4*dq)));   // ptr to subgrid array (DANGER this may not be correct)
+
+          BIGINT o = 2*(offset1+N1);         // 1d offset for output
+          for (int j=0; j<2*nlo; j++) { // j is really dx/2 (since re,im parts)
+    #pragma omp atomic
+            out[j + o] += in[j];
+          }
+          o = 2*offset1;
+          for (int j=2*nlo; j<2*(size1-nhi); j++) {
+    #pragma omp atomic
+            out[j + o] += in[j];
+          }
+          o = 2*(offset1-N1);
+          for (int j=2*(size1-nhi); j<2*size1; j++) {
+    #pragma omp atomic
+            out[j+o] += in[j];
+          }
+        }
       }
     }
   }
@@ -1454,22 +1565,26 @@ void bin_sort_singlethread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT
  * Timings (2017): 3s for M=1e8 NU pts on 1 core of i7; 5s on 1 core of xeon.
  */
 {
-  bool isky=(N2>1), iskz=(N3>1);  // ky,kz avail? (cannot access if not)
+  bool isky=(N2>1), iskz=(N3>1), iskp=(N4>1), iskq=(N5>1);  // ky,kz,kp,kq avail? (cannot access if not)
   // here the +1 is needed to allow round-off error causing i1=N1/bin_size_x,
   // for kx near +pi, ie foldrescale gives N1 (exact arith would be 0 to N1-1).
   // Note that round-off near kx=-pi stably rounds negative to i1=0.
-  BIGINT nbins1=N1/bin_size_x+1, nbins2, nbins3;
+  BIGINT nbins1=N1/bin_size_x+1, nbins2, nbins3, nbins4, nbins5;
   nbins2 = isky ? N2/bin_size_y+1 : 1;
   nbins3 = iskz ? N3/bin_size_z+1 : 1;
-  BIGINT nbins = nbins1*nbins2*nbins3;
+  nbins4 = iskp ? N4/bin_size_p+1 : 1;
+  nbins5 = iskq ? N5/bin_size_q+1 : 1;
+  BIGINT nbins = nbins1*nbins2*nbins3*nbins4*nbins5;
 
   std::vector<BIGINT> counts(nbins,0);  // count how many pts in each bin
   for (BIGINT i=0; i<M; i++) {
     // find the bin index in however many dims are needed
-    BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0;
+    BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0, i4=0, i5=0;
     if (isky) i2 = FOLDRESCALE(ky[i],N2,pirange)/bin_size_y;
     if (iskz) i3 = FOLDRESCALE(kz[i],N3,pirange)/bin_size_z;
-    BIGINT bin = i1+nbins1*(i2+nbins2*i3);
+    if (iskz) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
+    if (iskz) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
+    BIGINT bin = i1+nbins1*(i2+nbins2*(i3+nbins3*(i4+nbins4*i5)));
     counts[bin]++;
   }
   std::vector<BIGINT> offsets(nbins);   // cumulative sum of bin counts
@@ -1480,10 +1595,12 @@ void bin_sort_singlethread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT
   std::vector<BIGINT> inv(M);           // fill inverse map
   for (BIGINT i=0; i<M; i++) {
     // find the bin index (again! but better than using RAM)
-    BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0;
+    BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0, i4=0, i5=0;
     if (isky) i2 = FOLDRESCALE(ky[i],N2,pirange)/bin_size_y;
     if (iskz) i3 = FOLDRESCALE(kz[i],N3,pirange)/bin_size_z;
-    BIGINT bin = i1+nbins1*(i2+nbins2*i3);
+    if (iskz) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
+    if (iskz) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
+    BIGINT bin = i1+nbins1*(i2+nbins2*(i3+nbins3*(i4+nbins4*i5)));
     BIGINT offset=offsets[bin];
     offsets[bin]++;
     inv[i]=offset;
@@ -1505,11 +1622,13 @@ void bin_sort_multithread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT 
    Todo: if debug, print timing breakdowns.
  */
 {
-  bool isky=(N2>1), iskz=(N3>1);  // ky,kz avail? (cannot access if not)
-  BIGINT nbins1=N1/bin_size_x+1, nbins2, nbins3;  // see above note on why +1
+  bool isky=(N2>1), iskz=(N3>1), iskp=(N4>1), iskq=(N5>1);  // ky,kz,kp,kq avail? (cannot access if not)
+  BIGINT nbins1=N1/bin_size_x+1, nbins2, nbins3, nbins4, nbins5;  // see above note on why +1
   nbins2 = isky ? N2/bin_size_y+1 : 1;
   nbins3 = iskz ? N3/bin_size_z+1 : 1;
-  BIGINT nbins = nbins1*nbins2*nbins3;
+  nbins4 = iskp ? N4/bin_size_p+1 : 1;
+  nbins5 = iskq ? N5/bin_size_q+1 : 1;
+  BIGINT nbins = nbins1*nbins2*nbins3*nbins4*nbins5;
   if (nthr==0)
     fprintf(stderr,"[%s] nthr (%d) must be positive!\n",__func__,nthr);
   int nt = min(M,(BIGINT)nthr);     // handle case of less points than threads
@@ -1531,10 +1650,12 @@ void bin_sort_multithread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT 
       //printf("\tt=%d: [%d,%d]\n",t,jlo[t],jhi[t]);
       for (BIGINT i=brk[t]; i<brk[t+1]; i++) {
         // find the bin index in however many dims are needed
-        BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0;
+        BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0, i4=0, i5=0;
         if (isky) i2 = FOLDRESCALE(ky[i],N2,pirange)/bin_size_y;
         if (iskz) i3 = FOLDRESCALE(kz[i],N3,pirange)/bin_size_z;
-        BIGINT bin = i1+nbins1*(i2+nbins2*i3);
+        if (iskz) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
+        if (iskz) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
+        BIGINT bin = i1+nbins1*(i2+nbins2*(i3+nbins3*(i4+nbins4*i5)));
         ct[t][bin]++;               // no clash btw threads
       }
     }
@@ -1563,10 +1684,12 @@ void bin_sort_multithread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT 
     int t = MY_OMP_GET_THREAD_NUM();
     for (BIGINT i=brk[t]; i<brk[t+1]; i++) {
       // find the bin index (again! but better than using RAM)
-      BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0;
+      BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0, i4=0, i5=0;
       if (isky) i2 = FOLDRESCALE(ky[i],N2,pirange)/bin_size_y;
       if (iskz) i3 = FOLDRESCALE(kz[i],N3,pirange)/bin_size_z;
-      BIGINT bin = i1+nbins1*(i2+nbins2*i3);
+      if (iskz) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
+      if (iskz) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
+      BIGINT bin = i1+nbins1*(i2+nbins2*(i3+nbins3*(i4+nbins4*i5)));
       inv[i]=ot[t][bin];   // get the offset for this NU pt and thread
       ot[t][bin]++;               // no clash
     }
@@ -1647,5 +1770,23 @@ void get_subgrid(BIGINT &offset1,BIGINT &offset2,BIGINT &offset3,BIGINT &offset4
   } else {
     offset3 = 0;
     size3 = 1;
+  }
+  if (ndims>3) {
+    FLT min_kp,max_kp;   // 4th (p) dimension: get min/max of nonuniform points
+    arrayrange(M,kp,&min_kp,&max_kp);
+    offset4 = (BIGINT)std::ceil(min_kp-ns2);
+    size4 = (BIGINT)std::ceil(max_kp-ns2) - offset4 + ns;
+  } else {
+    offset4 = 0;
+    size4 = 1;
+  }
+  if (ndims>4) {
+    FLT min_kq,max_kq;   // 5th (q) dimension: get min/max of nonuniform points
+    arrayrange(M,kq,&min_kq,&max_kq);
+    offset5 = (BIGINT)std::ceil(min_kq-ns2);
+    size5 = (BIGINT)std::ceil(max_kq-ns2) - offset5 + ns;
+  } else {
+    offset5 = 0;
+    size5 = 1;
   }
 }

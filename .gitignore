@@ -4,6 +4,7 @@
 *.so
 *.out
 *.o
+.vscode/
 examples/example1d1
 examples/example1d1c
 examples/example2d1
