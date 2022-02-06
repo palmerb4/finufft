@@ -29,18 +29,22 @@ int invokeGuruInterface(int n_dims, int type, int n_transf, BIGINT nj, FLT* xj,
   FINUFFT_PLAN plan;
   int ier = FINUFFT_MAKEPLAN(type, n_dims, n_modes, iflag, n_transf, eps,
                              &plan, popts);  // popts (ptr to opts) can be NULL
+  fprintf(stderr,"%s FINUFFT_MAKEPLAN\n",__func__);
+
   if (ier>1) {   // since 1 (a warning) still allows proceeding...
     fprintf(stderr, "FINUFFT invokeGuru: plan error (ier=%d)!\n", ier);
     return ier;
   }
 
   int ier2 = FINUFFT_SETPTS(plan, nj, xj, yj, zj, pj, qj, nk, s, t, u, v, w);
+  fprintf(stderr,"%s FINUFFT_SETPTS\n",__func__);
   if (ier2>1) {
     fprintf(stderr,"FINUFFT invokeGuru: setpts error (ier=%d)!\n", ier2);
     return ier2;
   }
 
   int ier3 = FINUFFT_EXECUTE(plan, cj, fk);
+  fprintf(stderr,"%s FINUFFT_EXECUTE\n",__func__);
   if (ier3>1) {
     fprintf(stderr,"FINUFFT invokeGuru: execute error (ier=%d)!\n", ier3);
     return ier3;
@@ -58,7 +62,7 @@ int FINUFFT1D1(BIGINT nj,FLT* xj,CPX* cj,int iflag,FLT eps,BIGINT ms,
 	       CPX* fk, nufft_opts *opts)
 //  Type-1 1D complex nonuniform FFT. See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,1,1};
+  BIGINT n_modes[]={ms,1,1,1,1};
   int n_dims = 1;
   int n_transf = 1;
   int type = 1;
@@ -71,7 +75,7 @@ int FINUFFT1D1MANY(int n_transf, BIGINT nj,FLT* xj,CPX* cj,int iflag,FLT eps,
                    BIGINT ms, CPX* fk, nufft_opts *opts)
 // Type-1 1D complex nonuniform FFT for many vectors. See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,1,1};
+  BIGINT n_modes[]={ms,1,1,1,1};
   int n_dims = 1;
   int type = 1;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, NULL, NULL, NULL, NULL, cj,
@@ -83,7 +87,7 @@ int FINUFFT1D2(BIGINT nj,FLT* xj,CPX* cj,int iflag,FLT eps,BIGINT ms,
 	       CPX* fk, nufft_opts *opts)
 //  Type-2 1D complex nonuniform FFT. See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,1,1};
+  BIGINT n_modes[]={ms,1,1,1,1};
   int n_dims = 1;
   int n_transf = 1;
   int type = 2;
@@ -96,7 +100,7 @@ int FINUFFT1D2MANY(int n_transf, BIGINT nj,FLT* xj,CPX* cj,int iflag,FLT eps,BIG
 	       CPX* fk, nufft_opts *opts)
 //  Type-2 1D complex nonuniform FFT, many vectors. See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,1,1};
+  BIGINT n_modes[]={ms,1,1,1,1};
   int n_dims = 1;
   int type = 2;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, NULL, NULL, NULL, NULL, cj,
@@ -132,7 +136,7 @@ int FINUFFT2D1(BIGINT nj,FLT* xj,FLT *yj,CPX* cj,int iflag,
 	       FLT eps, BIGINT ms, BIGINT mt, CPX* fk, nufft_opts* opts)
 //  Type-1 2D complex nonuniform FFT. See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,1};
+  BIGINT n_modes[]={ms,mt,1,1,1};
   int n_dims = 2;
   int n_transf = 1;
   int type = 1;
@@ -146,7 +150,7 @@ int FINUFFT2D1MANY(int n_transf, BIGINT nj, FLT* xj, FLT *yj, CPX* c,
 		   nufft_opts *opts)
 //  Type-1 2D complex nonuniform FFT, many vectors. See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,1};
+  BIGINT n_modes[]={ms,mt,1,1,1};
   int n_dims = 2;
   int type = 1;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, NULL, NULL, NULL, c,
@@ -158,7 +162,7 @@ int FINUFFT2D2(BIGINT nj,FLT* xj,FLT *yj,CPX* cj,int iflag,FLT eps,
 	       BIGINT ms, BIGINT mt, CPX* fk, nufft_opts *opts)
 //  Type-2 2D complex nonuniform FFT.  See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,1};
+  BIGINT n_modes[]={ms,mt,1,1,1};
   int n_dims = 2;
   int n_transf = 1;
   int type = 2;
@@ -171,7 +175,7 @@ int FINUFFT2D2MANY(int n_transf, BIGINT nj, FLT* xj, FLT *yj, CPX* c, int iflag,
 		   FLT eps, BIGINT ms, BIGINT mt, CPX* fk, nufft_opts *opts)
 //  Type-2 2D complex nonuniform FFT, many vectors.  See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,1};
+  BIGINT n_modes[]={ms,mt,1,1,1};
   int n_dims = 2;
   int type = 2;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, NULL, NULL, NULL, c, iflag,
@@ -209,7 +213,7 @@ int FINUFFT3D1(BIGINT nj,FLT* xj,FLT *yj,FLT *zj,CPX* cj,int iflag,
 	       nufft_opts *opts)
 //  Type-1 3D complex nonuniform FFT.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu};
+  BIGINT n_modes[]={ms,mt,mu,1,1};
   int n_dims = 3;
   int n_transf = 1;
   int type = 1;
@@ -224,7 +228,7 @@ int FINUFFT3D1MANY(int n_transf, BIGINT nj,FLT* xj,FLT *yj,FLT *zj,CPX* cj,
                    nufft_opts *opts)
 // Type-1 3D complex nonuniform FFT, many vectors.  See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu};
+  BIGINT n_modes[]={ms,mt,mu,1,1};
   int n_dims = 3;
   int type = 1;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, zj, NULL, NULL, cj, iflag,
@@ -237,7 +241,7 @@ int FINUFFT3D2(BIGINT nj,FLT* xj,FLT *yj,FLT *zj,CPX* cj,
 	       CPX* fk, nufft_opts *opts)
 // Type-2 3D complex nonuniform FFT.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu};
+  BIGINT n_modes[]={ms,mt,mu,1,1};
   int n_dims = 3;
   int n_transf = 1;
   int type = 2;
@@ -251,7 +255,7 @@ int FINUFFT3D2MANY(int n_transf, BIGINT nj,FLT* xj,FLT *yj,FLT *zj,CPX* cj,
 	       CPX* fk, nufft_opts *opts)
 // Type-2 3D complex nonuniform FFT, many vectors.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu};
+  BIGINT n_modes[]={ms,mt,mu,1,1};
   int n_dims = 3;
   int type = 2;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, zj, NULL, NULL, cj, iflag,
@@ -292,7 +296,7 @@ int FINUFFT4D1(BIGINT nj,FLT* xj,FLT *yj,FLT *zj,FLT *pj,CPX* cj,int iflag,
 	       nufft_opts *opts)
 //  Type-1 4D complex nonuniform FFT.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu,mv};
+  BIGINT n_modes[]={ms,mt,mu,mv,1};
   int n_dims = 4;
   int n_transf = 1;
   int type = 1;
@@ -307,7 +311,7 @@ int FINUFFT4D1MANY(int n_transf, BIGINT nj,FLT* xj,FLT *yj,FLT *zj,FLT *pj,CPX* 
                    nufft_opts *opts)
 // Type-1 4D complex nonuniform FFT, many vectors.  See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu,mv};
+  BIGINT n_modes[]={ms,mt,mu,mv,1};
   int n_dims = 4;
   int type = 1;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, zj, pj, NULL, cj, iflag,
@@ -320,7 +324,7 @@ int FINUFFT4D2(BIGINT nj,FLT* xj,FLT *yj,FLT *zj,FLT *pj,CPX* cj,
 	       CPX* fk, nufft_opts *opts)
 // Type-2 4D complex nonuniform FFT.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu,mv};
+  BIGINT n_modes[]={ms,mt,mu,mv,1};
   int n_dims = 4;
   int n_transf = 1;
   int type = 2;
@@ -334,7 +338,7 @@ int FINUFFT4D2MANY(int n_transf, BIGINT nj,FLT* xj,FLT *yj,FLT *zj,FLT *pj,CPX* 
 	       CPX* fk, nufft_opts *opts)
 // Type-2 4D complex nonuniform FFT, many vectors.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu,mv};
+  BIGINT n_modes[]={ms,mt,mu,mv,1};
   int n_dims = 4;
   int type = 2;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, zj, pj, NULL, cj, iflag,
@@ -374,7 +378,7 @@ int FINUFFT5D1(BIGINT nj,FLT* xj,FLT *yj,FLT *zj,FLT *pj,FLT *qj,CPX* cj,int ifl
 	       nufft_opts *opts)
 //  Type-1 5D complex nonuniform FFT.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu,mv,mw};
+  BIGINT n_modes[]={ms,mt,mu,mv,mw,1};
   int n_dims = 5;
   int n_transf = 1;
   int type = 1;
@@ -389,7 +393,7 @@ int FINUFFT5D1MANY(int n_transf, BIGINT nj,FLT* xj,FLT *yj,FLT *zj,FLT *pj,FLT *
                    nufft_opts *opts)
 // Type-1 5D complex nonuniform FFT, many vectors.  See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu,mv,mw};
+  BIGINT n_modes[]={ms,mt,mu,mv,mw,1};
   int n_dims = 5;
   int type = 1;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, zj, pj, qj, cj, iflag,
@@ -402,7 +406,7 @@ int FINUFFT5D2(BIGINT nj,FLT* xj,FLT *yj,FLT *zj,FLT *pj,FLT *qj,CPX* cj,
 	       CPX* fk, nufft_opts *opts)
 // Type-2 5D complex nonuniform FFT.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu,mv,mw};
+  BIGINT n_modes[]={ms,mt,mu,mv,mw,1};
   int n_dims = 5;
   int n_transf = 1;
   int type = 2;
@@ -416,7 +420,7 @@ int FINUFFT5D2MANY(int n_transf, BIGINT nj,FLT* xj,FLT *yj,FLT *zj,FLT *pj,FLT *
 	       CPX* fk, nufft_opts *opts)
 // Type-2 5D complex nonuniform FFT, many vectors.   See ../docs/usage.rst
 {
-  BIGINT n_modes[]={ms,mt,mu,mv,mw};
+  BIGINT n_modes[]={ms,mt,mu,mv,mw,1};
   int n_dims = 5;
   int type = 2;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, zj, pj, qj, cj, iflag,

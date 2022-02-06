@@ -81,6 +81,9 @@ T=finufft2dmany_test$PRECSUF
 E=${PIPESTATUS[0]}
 if [[ $E -eq 0 ]]; then echo passed; elif [[ $E -eq $SIGSEGV ]]; then echo crashed; ((CRASHES++)); else echo failed; ((FAILS++)); fi
 
+# the below all crash
+
+
 ((N++))
 T=finufft3d_test$PRECSUF
 ./$T$FEX 5 10 20 1e2 $FINUFFT_REQ_TOL 0 2 0.0 $CHECK_TOL 2>$DIR/$T.err.out | tee $DIR/$T.out

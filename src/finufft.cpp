@@ -767,7 +767,7 @@ int FINUFFT_MAKEPLAN(int type, int dim, BIGINT* n_modes, int iflag,
                 || (dim==2 && p->N>3000000) 
                 || (dim==3 && p->N>3000000) 
                 || (dim==4 && p->N>1000000)
-                || (dim==5 && p->N>300000))  // type 1,2 heuristic cutoffs, double, typ tol, 12-core xeon
+                || (dim==5 && p->N>100000))  // type 1,2 heuristic cutoffs, double, typ tol, 12-core xeon
         p->opts.upsampfac=1.25;
     }
     if (p->opts.debug > 1)
@@ -779,7 +779,7 @@ int FINUFFT_MAKEPLAN(int type, int dim, BIGINT* n_modes, int iflag,
     return ier;
 
   // set others as defaults (or unallocated for arrays)...
-  p->X = NULL; p->Y = NULL; p->Z = NULL;
+  p->X = NULL; p->Y = NULL; p->Z = NULL; p->P = NULL; p->Q = NULL;
   p->phiHat1 = NULL; p->phiHat2 = NULL; p->phiHat3 = NULL; p->phiHat4 = NULL; p->phiHat5 = NULL;
   p->nf1 = 1; p->nf2 = 1; p->nf3 = 1; p->nf4 = 1; p->nf5 = 1; // crucial to leave as 1 for unused dims
   p->sortIndices = NULL;               // used in all three types
@@ -890,7 +890,7 @@ int FINUFFT_MAKEPLAN(int type, int dim, BIGINT* n_modes, int iflag,
     // in case destroy occurs before setpts, need safe dummy ptrs/plans...
     p->CpBatch = NULL;
     p->fwBatch = NULL;
-    p->Sp = NULL; p->Tp = NULL; p->Up = NULL;
+    p->Sp = NULL; p->Tp = NULL; p->Up = NULL; p->Vp = NULL; p->Wp = NULL;
     p->prephase = NULL;
     p->deconv = NULL;
     p->innerT2plan = NULL;
@@ -923,6 +923,8 @@ int FINUFFT_SETPTS(FINUFFT_PLAN p, BIGINT nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj
     p->Q = qj;
 
     int ier = spreadcheck(p->nf1, p->nf2, p->nf3, p->nf4, p->nf5, p->nj, xj, yj, zj, pj, qj, p->spopts);
+    fprintf(stderr,"%s spreadcheck\n",__func__);
+
     if (p->opts.debug>1) printf("[%s] spreadcheck (%d):\t%.3g s\n", __func__, p->spopts.chkbnds, timer.elapsedsec());
     if (ier)         // no warnings allowed here
       return ier;    
@@ -932,7 +934,11 @@ int FINUFFT_SETPTS(FINUFFT_PLAN p, BIGINT nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj
       fprintf(stderr,"[%s] failed to allocate sortIndices!\n",__func__);
       return ERR_SPREAD_ALLOC;
     }
+    fprintf(stderr,"%s allocate\n",__func__);
+
+
     p->didSort = indexSort(p->sortIndices, p->nf1, p->nf2, p->nf3, p->nf4, p->nf5, p->nj, xj, yj, zj, pj, qj, p->spopts);
+    fprintf(stderr,"%s indexSort\n",__func__);
     if (p->opts.debug) printf("[%s] sort (didSort=%d):\t\t%.3g s\n", __func__,p->didSort, timer.elapsedsec());
 
     
@@ -970,7 +976,7 @@ int FINUFFT_SETPTS(FINUFFT_PLAN p, BIGINT nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj
     }
     p->t3P.C4 = 0.0;
     p->t3P.D4 = 0.0;
-    if (d>2) {
+    if (d>3) {
       arraywidcen(nj,pj,&(p->t3P.X4),&(p->t3P.C4));     // {p_j}
       arraywidcen(nk,v,&S4,&(p->t3P.D4));               // {v_k}
       set_nhg_type3(S4,p->t3P.X4,p->opts,p->spopts,
@@ -978,8 +984,8 @@ int FINUFFT_SETPTS(FINUFFT_PLAN p, BIGINT nj, FLT* xj, FLT* yj, FLT* zj, FLT* pj
     }
     p->t3P.C5 = 0.0;
     p->t3P.D5 = 0.0;
-    if (d>2) {
-      arraywidcen(nj,qj,&(p->t3P.X4),&(p->t3P.C5));     // {q_j}
+    if (d>4) {
+      arraywidcen(nj,qj,&(p->t3P.X5),&(p->t3P.C5));     // {q_j}
       arraywidcen(nk,w,&S5,&(p->t3P.D5));               // {w_k}
       set_nhg_type3(S5,p->t3P.X5,p->opts,p->spopts,
                     &(p->nf5),&(p->t3P.h5),&(p->t3P.gam5));

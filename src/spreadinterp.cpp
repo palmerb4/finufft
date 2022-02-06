@@ -234,7 +234,7 @@ int spreadcheck(BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, BIGINT N5, BIGINT M,
       }
     if (ndims>4)
       for (BIGINT i=0; i<M; ++i) {
-        if ((opts.pirange ? (abs(kq[i])>3.0*PI) : (kq[i]<-N4 || kq[i]>2*N4)) || !isfinite(kq[i])) {
+        if ((opts.pirange ? (abs(kq[i])>3.0*PI) : (kq[i]<-N5 || kq[i]>2*N5)) || !isfinite(kq[i])) {
           fprintf(stderr,"%s NU pt not in valid range (central three periods): kq[%lld]=%.16g, N5=%lld (pirange=%d)\n",__func__, (long long)i, kq[i], (long long)N5,opts.pirange);
           return ERR_SPREAD_PTS_OUT_RANGE;
         }
@@ -295,12 +295,17 @@ int indexSort(BIGINT* sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, 
     int sort_nthr = opts.sort_threads;   // choose # threads for sorting
     if (sort_nthr==0)   // use auto choice: when N>>M, one thread is better!
       sort_nthr = (10*M>N) ? maxnthr : 1;      // heuristic
-    if (sort_nthr==1)
+    if (sort_nthr==1) {
+      fprintf(stderr,"%s begin bin_sort_singlethread\n",__func__);
       bin_sort_singlethread(sort_indices,M,kx,ky,kz,kp,kq,N1,N2,N3,N4,N5,opts.pirange,
                             bin_size_x,bin_size_y,bin_size_z,bin_size_p,bin_size_q,sort_debug);
-    else                                      // sort_nthr>1, sets # threads
+      fprintf(stderr,"%s bin_sort_singlethread\n",__func__);
+    } else {                                    // sort_nthr>1, sets # threads
+      fprintf(stderr,"%s begin bin_sort_multithread\n",__func__);
       bin_sort_multithread(sort_indices,M,kx,ky,kz,kp,kq,N1,N2,N3,N4,N5,opts.pirange,
                            bin_size_x,bin_size_y,bin_size_z,bin_size_p,bin_size_q,sort_debug,sort_nthr);
+      fprintf(stderr,"%s bin_sort_multithread\n",__func__);
+    }
     if (opts.debug) 
       printf("\tsorted (%d threads):\t%.3g s\n",sort_nthr,timer.elapsedsec());
     did_sort=1;
@@ -925,7 +930,7 @@ void interp_cube(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3,
   target[1] = out[1];  
 }
 
-void interp_hyper_cube4D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, FLT *ker4,
+void interp_hypercube_4D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, FLT *ker4,
 		 BIGINT i1,BIGINT i2,BIGINT i3,BIGINT i4, BIGINT N1,BIGINT N2,BIGINT N3,BIGINT N4,int ns)
 // 4D interpolate complex values from du (uniform grid data) array to out value,
 // using ns*ns*ns*ns hypercube of real weights
@@ -995,7 +1000,7 @@ void interp_hyper_cube4D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, F
   target[1] = out[1];  
 }
 
-void interp_hyper_cube5D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, FLT *ker4, FLT *ker5,
+void interp_hypercube_5D(FLT *target,FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, FLT *ker4, FLT *ker5,
 		 BIGINT i1,BIGINT i2,BIGINT i3,BIGINT i4,BIGINT i5, BIGINT N1,BIGINT N2,BIGINT N3,BIGINT N4,BIGINT N5,int ns)
 // 5D interpolate complex values from du (uniform grid data) array to out value,
 // using ns*ns*ns*ns*ns hypercube of real weights
@@ -1237,12 +1242,12 @@ void spread_subproblem_3d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT size1,
     for (int dz=0; dz<ns; ++dz) {
       BIGINT oz = size1*size2*(i3-off3+dz);        // offset due to z
       for (int dy=0; dy<ns; ++dy) {
-	BIGINT j = oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid
-	FLT kerval = ker2[dy]*ker3[dz];
-	FLT *trg = du+2*j;
-	for (int dx=0; dx<2*ns; ++dx) {
-	  trg[dx] += kerval*ker1val[dx];
-	}	
+        BIGINT j = oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid
+        FLT kerval = ker2[dy]*ker3[dz];
+        FLT *trg = du+2*j;
+        for (int dx=0; dx<2*ns; ++dx) {
+          trg[dx] += kerval*ker1val[dx];
+        }	
       }
     }
   }
@@ -1308,7 +1313,7 @@ void spread_subproblem_4d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
         BIGINT oz = size1*size2*(i3-off3+dz);        // offset due to z
         FLT ker34 = ker3[dz]*ker4[dp];
         for (int dy=0; dy<ns; ++dy) {
-          BIGINT j = op + oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid (DANGER)
+          BIGINT j = op + oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid
           FLT kerval = ker2[dy]*ker34;
           FLT *trg = du+2*j;
           for (int dx=0; dx<2*ns; ++dx) {
@@ -1389,7 +1394,7 @@ void spread_subproblem_5d(BIGINT off1,BIGINT off2,BIGINT off3,BIGINT off4,BIGINT
           BIGINT oz = size1*size2*(i3-off3+dz);         // offset due to z
           FLT ker345 = ker3[dz]*ker45;
           for (int dy=0; dy<ns; ++dy) {
-            BIGINT j = oq + op + oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid (DANGER this isn't correct)
+            BIGINT j = oq + op + oz + size1*(i2-off2+dy) + i1-off1;   // should be in subgrid
             FLT kerval = ker2[dy]*ker345;
             FLT *trg = du+2*j;
             for (int dx=0; dx<2*ns; ++dx) {
@@ -1582,8 +1587,8 @@ void bin_sort_singlethread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT
     BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0, i4=0, i5=0;
     if (isky) i2 = FOLDRESCALE(ky[i],N2,pirange)/bin_size_y;
     if (iskz) i3 = FOLDRESCALE(kz[i],N3,pirange)/bin_size_z;
-    if (iskz) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
-    if (iskz) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
+    if (iskp) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
+    if (iskq) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
     BIGINT bin = i1+nbins1*(i2+nbins2*(i3+nbins3*(i4+nbins4*i5)));
     counts[bin]++;
   }
@@ -1591,15 +1596,15 @@ void bin_sort_singlethread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT
   offsets[0]=0;     // do: offsets = [0 cumsum(counts(1:end-1)]
   for (BIGINT i=1; i<nbins; i++)
     offsets[i]=offsets[i-1]+counts[i-1];
-  
+
   std::vector<BIGINT> inv(M);           // fill inverse map
   for (BIGINT i=0; i<M; i++) {
     // find the bin index (again! but better than using RAM)
     BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0, i4=0, i5=0;
     if (isky) i2 = FOLDRESCALE(ky[i],N2,pirange)/bin_size_y;
     if (iskz) i3 = FOLDRESCALE(kz[i],N3,pirange)/bin_size_z;
-    if (iskz) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
-    if (iskz) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
+    if (iskp) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
+    if (iskq) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
     BIGINT bin = i1+nbins1*(i2+nbins2*(i3+nbins3*(i4+nbins4*i5)));
     BIGINT offset=offsets[bin];
     offsets[bin]++;
@@ -1653,8 +1658,8 @@ void bin_sort_multithread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT 
         BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0, i4=0, i5=0;
         if (isky) i2 = FOLDRESCALE(ky[i],N2,pirange)/bin_size_y;
         if (iskz) i3 = FOLDRESCALE(kz[i],N3,pirange)/bin_size_z;
-        if (iskz) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
-        if (iskz) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
+        if (iskp) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
+        if (iskq) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
         BIGINT bin = i1+nbins1*(i2+nbins2*(i3+nbins3*(i4+nbins4*i5)));
         ct[t][bin]++;               // no clash btw threads
       }
@@ -1687,8 +1692,8 @@ void bin_sort_multithread(BIGINT *ret, BIGINT M, FLT *kx, FLT *ky, FLT *kz, FLT 
       BIGINT i1=FOLDRESCALE(kx[i],N1,pirange)/bin_size_x, i2=0, i3=0, i4=0, i5=0;
       if (isky) i2 = FOLDRESCALE(ky[i],N2,pirange)/bin_size_y;
       if (iskz) i3 = FOLDRESCALE(kz[i],N3,pirange)/bin_size_z;
-      if (iskz) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
-      if (iskz) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
+      if (iskp) i4 = FOLDRESCALE(kp[i],N4,pirange)/bin_size_p;
+      if (iskq) i5 = FOLDRESCALE(kq[i],N5,pirange)/bin_size_q;
       BIGINT bin = i1+nbins1*(i2+nbins2*(i3+nbins3*(i4+nbins4*i5)));
       inv[i]=ot[t][bin];   // get the offset for this NU pt and thread
       ot[t][bin]++;               // no clash
