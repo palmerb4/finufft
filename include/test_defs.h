@@ -7,16 +7,16 @@
 #include <finufft_eitherprec.h>
 
 // convenient finufft internals
+#include <defs.h>
 #include <utils.h>
 #include <utils_precindep.h>
-#include <defs.h>
 
 // std stuff
+#include <cstdio>
+#include <iomanip>
+#include <iostream>
 #include <math.h>
 #include <stdlib.h>
-#include <cstdio>
-#include <iostream>
-#include <iomanip>
 #include <vector>
 
 // how big a problem to check direct DFT for in 1D...
@@ -25,4 +25,4 @@
 // for omp rand filling
 #define TEST_RANDCHUNK 1000000
 
-#endif   // TEST_DEFS_H
+#endif // TEST_DEFS_H

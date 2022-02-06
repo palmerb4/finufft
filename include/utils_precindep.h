@@ -11,11 +11,12 @@ BIGINT next235even(BIGINT n);
 // jfm's timer class
 #include <sys/time.h>
 class CNTime {
- public:
+public:
   void start();
   double restart();
   double elapsedsec();
- private:
+
+private:
   struct timeval initial;
 };
 
@@ -28,4 +29,4 @@ int get_num_threads_parallel_block();
 int rand_r(unsigned int *seedp);
 #endif
 
-#endif  // UTILS_PRECINDEP_H
+#endif // UTILS_PRECINDEP_H

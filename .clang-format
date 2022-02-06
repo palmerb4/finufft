@@ -1,9 +1,9 @@
 ---
 Language:        Cpp
 BasedOnStyle:  LLVM
-TabWidth:        4
+TabWidth:        2
 ColumnLimit:     120
-IndentWidth: 4
+IndentWidth: 2
 AlwaysBreakTemplateDeclarations: true
 ...
 

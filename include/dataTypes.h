@@ -18,10 +18,10 @@ typedef int64_t BIGINT;
 // decide which kind of complex numbers to use in interface...
 #ifdef __cplusplus
 #define _USE_MATH_DEFINES
-#include <complex>          // C++ type
+#include <complex> // C++ type
 #define COMPLEXIFY(X) std::complex<X>
 #else
-#include <complex.h>        // C99 type
+#include <complex.h> // C99 type
 #define COMPLEXIFY(X) X complex
 #endif
 
@@ -31,11 +31,11 @@ typedef int64_t BIGINT;
 // Precision-independent real and complex types for interfacing...
 // (note these cannot be typedefs since we want dual-precision library)
 #ifdef SINGLE
-  #define FLT float
+#define FLT float
 #else
-  #define FLT double
+#define FLT double
 #endif
 
 #define CPX COMPLEXIFY(FLT)
 
-#endif  // DATATYPES_H or DATATYPESF_H
+#endif // DATATYPES_H or DATATYPESF_H
