@@ -566,8 +566,10 @@ int spreadinterpSortedBatch(int batchSize, FINUFFT_PLAN p, CPX *cBatch)
   for (int i = 0; i < batchSize; i++) {
     FFTW_CPX *fwi = p->fwBatch + i * p->nf; // start of i'th fw array in wkspace
     CPX *ci = cBatch + i * p->nj;           // start of i'th c array in cBatch
+    fprintf(stderr, "start spreadinterpSorted\n");
     spreadinterpSorted(p->sortIndices, p->nf1, p->nf2, p->nf3, p->nf4, p->nf5, (FLT *)fwi, p->nj, p->X, p->Y, p->Z,
                        p->P, p->Q, (FLT *)ci, p->spopts, p->didSort);
+    fprintf(stderr, "end spreadinterpSorted\n");
   }
   return 0;
 }
@@ -635,13 +637,13 @@ int *GRIDSIZE_FOR_FFTW(FINUFFT_PLAN p) {
     nf[1] = (int)p->nf2;
     nf[2] = (int)p->nf1;
   } else if (p->dim == 4) {
-    nf = new int[3];
+    nf = new int[4];
     nf[0] = (int)p->nf4;
     nf[1] = (int)p->nf3;
     nf[2] = (int)p->nf2;
     nf[3] = (int)p->nf1;
-  } else if (p->dim == 4) {
-    nf = new int[3];
+  } else if (p->dim == 5) {
+    nf = new int[5];
     nf[0] = (int)p->nf5;
     nf[1] = (int)p->nf4;
     nf[2] = (int)p->nf3;
@@ -902,6 +904,8 @@ int FINUFFT_MAKEPLAN(int type, int dim, BIGINT *n_modes, int iflag, int ntrans, 
       free(p->phiHat1);
       free(p->phiHat2);
       free(p->phiHat3);
+      free(p->phiHat4);
+      free(p->phiHat5);
       return ERR_ALLOC;
     }
 
@@ -959,7 +963,6 @@ int FINUFFT_SETPTS(FINUFFT_PLAN p, BIGINT nj, FLT *xj, FLT *yj, FLT *zj, FLT *pj
     p->Q = qj;
 
     int ier = spreadcheck(p->nf1, p->nf2, p->nf3, p->nf4, p->nf5, p->nj, xj, yj, zj, pj, qj, p->spopts);
-    fprintf(stderr, "%s spreadcheck\n", __func__);
 
     if (p->opts.debug > 1)
       printf("[%s] spreadcheck (%d):\t%.3g s\n", __func__, p->spopts.chkbnds, timer.elapsedsec());
@@ -971,11 +974,9 @@ int FINUFFT_SETPTS(FINUFFT_PLAN p, BIGINT nj, FLT *xj, FLT *yj, FLT *zj, FLT *pj
       fprintf(stderr, "[%s] failed to allocate sortIndices!\n", __func__);
       return ERR_SPREAD_ALLOC;
     }
-    fprintf(stderr, "%s allocate\n", __func__);
 
     p->didSort =
         indexSort(p->sortIndices, p->nf1, p->nf2, p->nf3, p->nf4, p->nf5, p->nj, xj, yj, zj, pj, qj, p->spopts);
-    fprintf(stderr, "%s indexSort\n", __func__);
     if (p->opts.debug)
       printf("[%s] sort (didSort=%d):\t\t%.3g s\n", __func__, p->didSort, timer.elapsedsec());
 
@@ -1285,10 +1286,14 @@ int FINUFFT_EXECUTE(FINUFFT_PLAN p, CPX *cj, CPX *fk) {
       // STEP 3: (varies by type)
       timer.restart();
       if (p->type == 1) { // type 1: deconvolve (amplify) fw and shuffle to fk
+        fprintf(stderr, "start deconvolveBatch\n");
         deconvolveBatch(thisBatchSize, p, fkb);
+        fprintf(stderr, "end deconvolveBatch\n");
         t_deconv += timer.elapsedsec();
       } else { // type 2: interpolate unif fw grid to NU target pts
+        fprintf(stderr, "start spreadinterpSortedBatch\n");
         spreadinterpSortedBatch(thisBatchSize, p, cjb);
+        fprintf(stderr, "end spreadinterpSortedBatch\n");
         t_sprint += timer.elapsedsec();
       }
     } // ........end b loop
@@ -1304,9 +1309,7 @@ int FINUFFT_EXECUTE(FINUFFT_PLAN p, CPX *cj, CPX *fk) {
         printf("               tot interp:\t\t\t%.3g s\n", t_sprint);
       }
     }
-  }
-
-  else { // ----------------------------- TYPE 3 EXEC ---------------------
+  } else { // ----------------------------- TYPE 3 EXEC ---------------------
 
     // for (BIGINT j=0;j<10;++j) printf("\tcj[%ld]=%.15g+%.15gi\n",(long
     // int)j,(double)real(cj[j]),(double)imag(cj[j]));  // debug

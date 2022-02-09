@@ -3,6 +3,8 @@
 #include "directft/dirft1d.cpp"
 #include "directft/dirft2d.cpp"
 #include "directft/dirft3d.cpp"
+#include "directft/dirft4d.cpp"
+#include "directft/dirft5d.cpp"
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -35,7 +37,7 @@ int main(int argc, char *argv[])
   nufft_opts opts;
   FINUFFT_DEFAULT_OPTS(&opts);
 
-  int NN = N * N * N; // modes F alloc size since we'll go to 3d
+  int NN = N * N * N * N * N; // modes F alloc size since we'll go to 5d
   // generate some "random" nonuniform points (x) and complex strengths (c):
   FLT *x = (FLT *)malloc(sizeof(FLT) * M);
   CPX *c = (CPX *)malloc(sizeof(CPX) * M);
@@ -60,10 +62,12 @@ int main(int argc, char *argv[])
   // for (int k=0;k<N;++k) printf("F[%d] = %g+%gi\n",k,real(F[k]),imag(F[k]));
   // for (int j=0;j<M;++j) printf("c[%d] = %g+%gi\n",j,real(c[j]),imag(c[j]));
   // printf("%.3g %3g\n",twonorm(N,F),twonorm(M,c));
-  opts.debug = 0; // set to 1,2, to debug segfaults
-  opts.spread_debug = 0;
+  opts.debug = 2; // set to 1,2, to debug segfaults
+  opts.spread_debug = 2;
 
+  printf("##############################\n");
   printf("1D dumb cases ----------------\n");
+  printf("##############################\n");
   int ier = FINUFFT1D1(M, x, c, +1, 0, N, F, &opts);
   printf("1d1 tol=0:\tier=%d (should complain)\n", ier);
   ier = FINUFFT1D1(M, x, c, +1, acc, 0, F, &opts);
@@ -162,7 +166,9 @@ int main(int argc, char *argv[])
   ier = FINUFFT1D3MANY(ndata, M, x, c, +1, acc, N, shuge, F, &opts);
   printf("1d3many XK prod too big:\tier=%d (should complain)\n", ier);
 
+  printf("##############################\n");
   printf("2D dumb cases ----------------\n"); // (uses y=x, and t=s in type 3)
+  printf("##############################\n");
   ier = FINUFFT2D1(M, x, x, c, +1, 0, N, N, F, &opts);
   printf("2d1 tol=0:\tier=%d (should complain)\n", ier);
   ier = FINUFFT2D1(M, x, x, c, +1, acc, 0, 0, F, &opts);
@@ -245,7 +251,9 @@ int main(int argc, char *argv[])
   ier = FINUFFT2D3MANY(ndata, M, x, x, c, +1, acc, N, shuge, shuge, Fm, &opts);
   printf("2d3many XK prod too big:\tier=%d (should complain)\n", ier);
 
+  printf("##############################\n");
   printf("3D dumb cases ----------------\n"); // z=y=x, and u=t=s in type 3
+  printf("##############################\n");
   ier = FINUFFT3D1(M, x, x, x, c, +1, 0, N, N, N, F, &opts);
   printf("3d1 tol=0:\tier=%d (should complain)\n", ier);
   ier = FINUFFT3D1(M, x, x, x, c, +1, acc, 0, 0, 0, F, &opts);
@@ -302,7 +310,7 @@ int main(int argc, char *argv[])
   ier = FINUFFT3D1MANY(ndata, M, x, x, x, cm, +1, acc, N, 0, N, Fm, &opts);
   printf("3d1many Ns>0,Ns=0,Nu>0:\tier=%d\n", ier);
   ier = FINUFFT3D1MANY(ndata, M, x, x, x, cm, +1, acc, N, N, 0, Fm, &opts);
-  printf("3d1many Ns>0,Ns>0,Nu=0,:\tier=%d\n", ier);
+  printf("3d1many Ns>0,Ns>0,Nu=0:\tier=%d\n", ier);
   ier = FINUFFT3D1MANY(ndata, 0, x, x, x, cm, +1, acc, N, N, N, Fm, &opts);
   printf("3d1many M=0:\t\tier=%d\tnrm(Fm)=%.3g (should vanish)\n", ier, twonorm(N * ndata, Fm));
 
@@ -335,6 +343,219 @@ int main(int argc, char *argv[])
   printf("3d3 M=1:\tier=%d\tnrm(F)=%.3g\n", ier, twonorm(N, Fm));
   ier = FINUFFT3D3MANY(ndata, M, x, x, x, c, +1, acc, N, shuge, shuge, shuge, Fm, &opts);
   printf("3d3many XK prod too big:\tier=%d (should complain)\n", ier);
+
+
+  printf("##############################\n");
+  printf("4D dumb cases ----------------\n"); // p=z=y=x, and u=t=s in type 3
+  printf("##############################\n");
+  ier = FINUFFT4D1(M, x, x, x, x, c, +1, 0, N, N, N, N, F, &opts);
+  printf("4d1 tol=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT4D1(M, x, x, x, x, c, +1, acc, 0, 0, 0, 0, F, &opts);
+  printf("4d1 Ns=Nt=Nu=Nv=0:\tier=%d\n", ier);
+  ier = FINUFFT4D1(M, x, x, x, x, c, +1, acc, 0, N, N, N, F, &opts);
+  printf("4d1 Ns=0,Nt,Nu,Nv>0:\tier=%d\n", ier);
+  ier = FINUFFT4D1(M, x, x, x, x, c, +1, acc, N, 0, N, N, F, &opts);
+  printf("4d1 Ns>0,Nt=0,Nu,Nv>0:\tier=%d\n", ier);
+  ier = FINUFFT4D1(M, x, x, x, x, c, +1, acc, N, N, 0, N, F, &opts);
+  printf("4d1 Ns,Nt>0,Nu=0,Nv>0:\tier=%d\n", ier);
+  ier = FINUFFT4D1(M, x, x, x, x, c, +1, acc, N, N, N, 0, F, &opts);
+  printf("4d1 Ns,Nt,Nu>0,Nv=0:\tier=%d\n", ier);
+  ier = FINUFFT4D1(0, x, x, x, x, c, +1, acc, N, N, N, N, F, &opts);
+  printf("4d1 M=0:\tier=%d\tnrm(F)=%.3g (should vanish)\n", ier, twonorm(N, F));
+
+  for (int k = 0; k < NN; ++k)
+    F[k] = sin((FLT)0.7 * k) + IMA * cos((FLT)0.3 * k); // set F for t2
+  ier = FINUFFT4D2(M, x, x, x, x, c, +1, 0, N, N, N, N, F, &opts);                                            // this one appears to crash
+  printf("4d2 tol=0:\tier=%d (should complain)\n", ier);                                                    
+  ier = FINUFFT4D2(M, x, x, x, x, c, +1, acc, 0, 0, 0, 0, F, &opts);
+  printf("4d2 Ns=Nt=Nu=Nv=0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT4D2(M, x, x, x, x, c, +1, acc, 0, N, N, N, F, &opts);
+  printf("4d2 Ns=0,Nt,Nu,Nv>0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT4D2(M, x, x, x, x, c, +1, acc, N, 0, N, N, F, &opts);
+  printf("4d2 Ns>0,Nt=0,Nu,Nv>0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT4D2(M, x, x, x, x, c, +1, acc, N, N, 0, N, F, &opts);
+  printf("4d2 Ns,Nt>0,Nu=0,Nv>0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT4D2(M, x, x, x, x, c, +1, acc, N, N, N, 0, F, &opts);
+  printf("4d2 Ns,Nt,Nu>0,Nv=0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT4D2(0, x, x, x, x, c, +1, acc, N, N, N, N, F, &opts);
+  printf("4d2 M=0:\tier=%d\n", ier);
+
+  for (int j = 0; j < M; ++j)
+    c[j] = sin((FLT)1.3 * j) + IMA * cos((FLT)0.9 * j); // reset c for t3
+  ier = FINUFFT4D3(M, x, x, x, x, c, +1, 0, N, s, s, s, s, F, &opts);                                         // this one appears to crash                                    
+  printf("4d3 tol=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT4D3(M, x, x, x, x, c, +1, acc, 0, s, s, s, s, F, &opts);
+  printf("4d3 nk=0:\tier=%d\n", ier);
+  ier = FINUFFT4D3(0, x, x, x, x, c, +1, acc, N, s, s, s, s, F, &opts);
+  printf("4d3 M=0:\tier=%d\tnrm(F)=%.3g (should vanish)\n", ier, twonorm(N, F));
+  ier = FINUFFT4D3(1, x, x, x, x, c, +1, acc, N, s, s, s, s, F, &opts); // XK prod formally 0
+  printf("4d3 M=1:\tier=%d\tnrm(F)=%.3g\n", ier, twonorm(N, F));
+  for (int k = 0; k < N; ++k)
+    shuge[k] = pow(huge, 1. / 3) * s[k]; // less huge coords
+  ier = FINUFFT4D3(M, x, x, x, x, c, +1, acc, N, shuge, shuge, shuge, shuge, F, &opts);
+  printf("4d3 XK prod too big:\tier=%d (should complain)\n", ier);
+
+  for (int j = 0; j < M * ndata; ++j)
+    cm[j] = sin((FLT)1.3 * j) + IMA * cos((FLT)0.9 * j); // reset cm for 4d1many
+  ier = FINUFFT4D1MANY(0, M, x, x, x, x, cm, +1, 0, N, N, N, N, Fm, &opts);
+  printf("4d1many ndata=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT4D1MANY(ndata, M, x, x, x, x, cm, +1, 0, N, N, N, N, Fm, &opts);
+  printf("4d1many tol=0:\t\tier=%d (should complain)\n", ier);
+  ier = FINUFFT4D1MANY(ndata, M, x, x, x, x, cm, +1, acc, 0, 0, 0, 0, Fm, &opts);
+  printf("4d1many Ns=Nt=Nu=Nv=0:\tier=%d\n", ier);
+  ier = FINUFFT4D1MANY(ndata, M, x, x, x, x, cm, +1, acc, 0, N, N, N, Fm, &opts);
+  printf("4d1many Ns=0,Nt,Nu,Nv>0:\tier=%d\n", ier);
+  ier = FINUFFT4D1MANY(ndata, M, x, x, x, x, cm, +1, acc, N, 0, N, N, Fm, &opts);
+  printf("4d1many Ns>0,Nt=0,Nu,Nv>0:\tier=%d\n", ier);
+  ier = FINUFFT4D1MANY(ndata, M, x, x, x, x, cm, +1, acc, N, N, 0, N, Fm, &opts);
+  printf("4d1many Ns,Nt>0,Nu=0,Nv>0:\tier=%d\n", ier);
+  ier = FINUFFT4D1MANY(ndata, M, x, x, x, x, cm, +1, acc, N, N, N, 0, Fm, &opts);
+  printf("4d1many Ns,Nt,Nu>0,Nv=0:\tier=%d\n", ier);
+  ier = FINUFFT4D1MANY(ndata, 0, x, x, x, x, cm, +1, acc, N, N, N, N, Fm, &opts);
+  printf("4d1many M=0:\t\tier=%d\tnrm(Fm)=%.3g (should vanish)\n", ier, twonorm(N * ndata, Fm));
+
+  for (int k = 0; k < NN * ndata; ++k)
+    Fm[k] = sin((FLT)0.7 * k) + IMA * cos((FLT)0.3 * k); // reset Fm for t2
+  ier = FINUFFT4D2MANY(0, M, x, x, x, x, cm, +1, 0, N, N, N, N, Fm, &opts);
+  printf("4d2many ndata=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT4D2MANY(ndata, M, x, x, x, x, cm, +1, 0, N, N, N, N, Fm, &opts);                             // this one appears to crash
+  printf("4d2many tol=0:\t\tier=%d (should complain)\n", ier);
+  ier = FINUFFT4D2MANY(ndata, M, x, x, x, x, cm, +1, acc, 0, 0, 0, 0, Fm, &opts);
+  printf("4d1many Ns=Nt=Nu=Nv=0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT4D2MANY(ndata, M, x, x, x, x, cm, +1, acc, 0, N, N, N, Fm, &opts);
+  printf("4d1many Ns=0,Nt,Nu,Nv>0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT4D2MANY(ndata, M, x, x, x, x, cm, +1, acc, N, 0, N, N, Fm, &opts);
+  printf("4d1many Ns>0,Nt=0,Nu,Nv>0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT4D2MANY(ndata, M, x, x, x, x, cm, +1, acc, N, N, 0, N, Fm, &opts);
+  printf("4d1many Ns,Nt>0,Nu=0,Nv>0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT4D2MANY(ndata, M, x, x, x, x, cm, +1, acc, N, N, N, 0, Fm, &opts);
+  printf("4d1many Ns,Nt,Nu>0,Nv=0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT4D2MANY(ndata, 0, x, x, x, x, cm, +1, acc, N, N, N, N, Fm, &opts);
+  printf("4d2many M=0:\t\tier=%d\n", ier);
+
+  ier = FINUFFT4D3MANY(0, M, x, x, x, x, cm, +1, 0, N, s, s, s, s, Fm, &opts);
+  printf("4d3many ndata=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT4D3MANY(ndata, M, x, x, x, x, cm, +1, 0, N, s, s, s, s, Fm, &opts);
+  printf("4d3many tol=0:\t\tier=%d (should complain)\n", ier);
+  ier = FINUFFT4D3MANY(ndata, M, x, x, x, x, cm, +1, acc, 0, s, s, s, s, Fm, &opts);
+  printf("4d3many nk=0:\tier=%d\n", ier);
+  ier = FINUFFT4D3MANY(ndata, 0, x, x, x, x, cm, +1, acc, N, s, s, s, s, Fm, &opts);
+  printf("4d3many M=0:\tier=%d\tnrm(F)=%.3g (should vanish)\n", ier, twonorm(N, Fm));
+  ier = FINUFFT4D3MANY(ndata, 1, x, x, x, x, c, +1, acc, N, s, s, s, s, F, &opts); // XK prod formally 0
+  printf("4d3 M=1:\tier=%d\tnrm(F)=%.3g\n", ier, twonorm(N, Fm));
+  ier = FINUFFT4D3MANY(ndata, M, x, x, x, x, c, +1, acc, N, shuge, shuge, shuge, shuge, Fm, &opts);
+  printf("4d3many XK prod too big:\tier=%d (should complain)\n", ier);
+
+
+  printf("##############################\n");
+  printf("5D dumb cases ----------------\n"); // p=z=y=x, and u=t=s in type 3
+  printf("##############################\n");
+  ier = FINUFFT5D1(M, x, x, x, x, x, c, +1, 0, N, N, N, N, N, F, &opts);
+  printf("5d1 tol=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D1(M, x, x, x, x, x, c, +1, acc, 0, 0, 0, 0, 0, F, &opts);
+  printf("5d1 Ns=Nt=Nu=Nv=Nw=0:\tier=%d\n", ier);
+  ier = FINUFFT5D1(M, x, x, x, x, x, c, +1, acc, 0, N, N, N, N, F, &opts);
+  printf("5d1 Ns=0,Nt,Nu,Nv,Nw>0:\tier=%d\n", ier);
+  ier = FINUFFT5D1(M, x, x, x, x, x, c, +1, acc, N, 0, N, N, N, F, &opts);
+  printf("5d1 Ns>0,Nt=0,Nu,Nv,Nw>0:\tier=%d\n", ier);
+  ier = FINUFFT5D1(M, x, x, x, x, x, c, +1, acc, N, N, 0, N, N, F, &opts);
+  printf("5d1 Ns,Nt>0,Nu=0,Nv,Nw>0:\tier=%d\n", ier);
+  ier = FINUFFT5D1(M, x, x, x, x, x, c, +1, acc, N, N, N, 0, N, F, &opts);
+  printf("5d1 Ns,Nt,Nu>0,Nv=0,Nw>0:\tier=%d\n", ier);
+  ier = FINUFFT5D1(M, x, x, x, x, x, c, +1, acc, N, N, N, N, 0, F, &opts);
+  printf("5d1 Ns,Nt,Nu,Nv>0,Nw=0:\tier=%d\n", ier);
+  ier = FINUFFT5D1(0, x, x, x, x, x, c, +1, acc, N, N, N, N, N, F, &opts);
+  printf("5d1 M=0:\tier=%d\tnrm(F)=%.3g (should vanish)\n", ier, twonorm(N, F));
+
+  for (int k = 0; k < NN; ++k)
+    F[k] = sin((FLT)0.7 * k) + IMA * cos((FLT)0.3 * k); // set F for t2
+  ier = FINUFFT5D2(M, x, x, x, x, x, c, +1, 0, N, N, N, N, N, F, &opts);
+  printf("5d2 tol=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D2(M, x, x, x, x, x, c, +1, acc, 0, 0, 0, 0, 0, F, &opts);
+  printf("5d2 Ns=Nt=Nu=Nv=Nw=0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT5D2(M, x, x, x, x, x, c, +1, acc, 0, N, N, N, N, F, &opts);
+  printf("5d2 Ns=0,Nt,Nu,Nv,Nw>0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT5D2(M, x, x, x, x, x, c, +1, acc, N, 0, N, N, N, F, &opts);
+  printf("5d2 Ns>0,Nt=0,Nu,Nv,Nw>0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT5D2(M, x, x, x, x, x, c, +1, acc, N, N, 0, N, N, F, &opts);
+  printf("5d2 Ns,Nt>0,Nu=0,Nv,Nw>0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT5D2(M, x, x, x, x, x, c, +1, acc, N, N, N, 0, N, F, &opts);
+  printf("5d2 Ns,Nt,Nu>0,Nv=0,Nw>0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT5D2(M, x, x, x, x, x, c, +1, acc, N, N, N, N, 0, F, &opts);
+  printf("5d2 Ns,Nt,Nu,Nv>0,Nw=0:\tier=%d\tnrm(c)=%.3g (should vanish)\n", ier, twonorm(M, c));
+  ier = FINUFFT5D2(0, x, x, x, x, x, c, +1, acc, N, N, N, N, N, F, &opts);
+  printf("5d2 M=0:\tier=%d\n", ier);
+
+  for (int j = 0; j < M; ++j)
+    c[j] = sin((FLT)1.3 * j) + IMA * cos((FLT)0.9 * j); // reset c for t3
+  ier = FINUFFT5D3(M, x, x, x, x, x, c, +1, 0, N, s, s, s, s, s, F, &opts);
+  printf("5d3 tol=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D3(M, x, x, x, x, x, c, +1, acc, 0, s, s, s, s, s, F, &opts);
+  printf("5d3 nk=0:\tier=%d\n", ier);
+  ier = FINUFFT5D3(0, x, x, x, x, x, c, +1, acc, N, s, s, s, s, s, F, &opts);
+  printf("5d3 M=0:\tier=%d\tnrm(F)=%.3g (should vanish)\n", ier, twonorm(N, F));
+  ier = FINUFFT5D3(1, x, x, x, x, x, c, +1, acc, N, s, s, s, s, s, F, &opts); // XK prod formally 0
+  printf("5d3 M=1:\tier=%d\tnrm(F)=%.3g\n", ier, twonorm(N, F));
+  for (int k = 0; k < N; ++k)
+    shuge[k] = pow(huge, 1. / 3) * s[k]; // less huge coords
+  ier = FINUFFT5D3(M, x, x, x, x, x, c, +1, acc, N, shuge, shuge, shuge, shuge, shuge, F, &opts);
+  printf("5d3 XK prod too big:\tier=%d (should complain)\n", ier);
+
+  for (int j = 0; j < M * ndata; ++j)
+    cm[j] = sin((FLT)1.3 * j) + IMA * cos((FLT)0.9 * j); // reset cm for 5d1many
+  ier = FINUFFT5D1MANY(0, M, x, x, x, x, x, cm, +1, 0, N, N, N, N, N, Fm, &opts);
+  printf("5d1many ndata=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D1MANY(ndata, M, x, x, x, x, x, cm, +1, 0, N, N, N, N, N, Fm, &opts);
+  printf("5d1many tol=0:\t\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D1MANY(ndata, M, x, x, x, x, x, cm, +1, acc, 0, 0, 0, 0, 0, Fm, &opts);
+  printf("5d1many Ns=Nt=Nu=Nv=Nw=0:\tier=%d\n", ier);
+  ier = FINUFFT5D1MANY(ndata, M, x, x, x, x, x, cm, +1, acc, 0, N, N, N, N, Fm, &opts);
+  printf("5d1many Ns=0,Nt,Nu,Nv,Nw>0:\tier=%d\n", ier);
+  ier = FINUFFT5D1MANY(ndata, M, x, x, x, x, x, cm, +1, acc, N, 0, N, N, N, Fm, &opts);
+  printf("5d1many Ns>0,Nt=0,Nu,Nv,Nw>0:\tier=%d\n", ier);
+  ier = FINUFFT5D1MANY(ndata, M, x, x, x, x, x, cm, +1, acc, N, N, 0, N, N, Fm, &opts);
+  printf("5d1many Ns,Nt>0,Nu=0,Nv,Nw>0:\tier=%d\n", ier);
+  ier = FINUFFT5D1MANY(ndata, M, x, x, x, x, x, cm, +1, acc, N, N, N, 0, N, Fm, &opts);
+  printf("5d1many Ns,Nt,Nu>0,Nv=0,Nw>0:\tier=%d\n", ier);
+  ier = FINUFFT5D1MANY(ndata, M, x, x, x, x, x, cm, +1, acc, N, N, N, N, 0, Fm, &opts);
+  printf("5d1many Ns,Nt,Nu,Nv>0,Nw=0:\tier=%d\n", ier);
+  ier = FINUFFT5D1MANY(ndata, 0, x, x, x, x, x, cm, +1, acc, N, N, N, N, N, Fm, &opts);
+  printf("5d1many M=0:\t\tier=%d\tnrm(Fm)=%.3g (should vanish)\n", ier, twonorm(N * ndata, Fm));
+
+  for (int k = 0; k < NN * ndata; ++k)
+    Fm[k] = sin((FLT)0.7 * k) + IMA * cos((FLT)0.3 * k); // reset Fm for t2
+  ier = FINUFFT5D2MANY(0, M, x, x, x, x, x, cm, +1, 0, N, N, N, N, N, Fm, &opts);
+  printf("5d2many ndata=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D2MANY(ndata, M, x, x, x, x, x, cm, +1, 0, N, N, N, N, N, Fm, &opts);
+  printf("5d2many tol=0:\t\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D2MANY(ndata, M, x, x, x, x, x, cm, +1, acc, 0, 0, 0, 0, 0, Fm, &opts);
+  printf("5d2many Ns=Nt=Nu=Nv=Nw=0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT5D2MANY(ndata, M, x, x, x, x, x, cm, +1, acc, 0, N, N, N, N, Fm, &opts);
+  printf("5d2many Ns=0,Nt,Nu,Nv,Nw>0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT5D2MANY(ndata, M, x, x, x, x, x, cm, +1, acc, N, 0, N, N, N, Fm, &opts);
+  printf("5d2many Ns>0,Nt=0,Nu,Nv,Nw>0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT5D2MANY(ndata, M, x, x, x, x, x, cm, +1, acc, N, N, 0, N, N, Fm, &opts);
+  printf("5d2many Ns,Nt>0,Nu=0,Nv,Nw>0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT5D2MANY(ndata, M, x, x, x, x, x, cm, +1, acc, N, N, N, 0, N, Fm, &opts);
+  printf("5d2many Ns,Nt,Nu>0,Nv=0,Nw>0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT5D2MANY(ndata, M, x, x, x, x, x, cm, +1, acc, N, N, N, N, 0, Fm, &opts);
+  printf("5d2many Ns,Nt,Nu,Nv>0,Nw=0:\tier=%d\tnrm(cm)=%.3g (should vanish)\n", ier, twonorm(M * ndata, cm));
+  ier = FINUFFT5D2MANY(ndata, 0, x, x, x, x, x, cm, +1, acc, N, N, N, N, N, Fm, &opts);
+  printf("5d2many M=0:\t\tier=%d\n", ier);
+
+  ier = FINUFFT5D3MANY(0, M, x, x, x, x, x, cm, +1, 0, N, s, s, s, s, s, Fm, &opts);
+  printf("5d3many ndata=0:\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D3MANY(ndata, M, x, x, x, x, x, cm, +1, 0, N, s, s, s, s, s, Fm, &opts);
+  printf("5d3many tol=0:\t\tier=%d (should complain)\n", ier);
+  ier = FINUFFT5D3MANY(ndata, M, x, x, x, x, x, cm, +1, acc, 0, s, s, s, s, s, Fm, &opts);
+  printf("5d3many nk=0:\tier=%d\n", ier);
+  ier = FINUFFT5D3MANY(ndata, 0, x, x, x, x, x, cm, +1, acc, N, s, s, s, s, s, Fm, &opts);
+  printf("5d3many M=0:\tier=%d\tnrm(F)=%.3g (should vanish)\n", ier, twonorm(N, Fm));
+  ier = FINUFFT5D3MANY(ndata, 1, x, x, x, x, x, c, +1, acc, N, s, s, s, s, s, F, &opts); // XK prod formally 0
+  printf("5d3 M=1:\tier=%d\tnrm(F)=%.3g\n", ier, twonorm(N, Fm));
+  ier = FINUFFT5D3MANY(ndata, M, x, x, x, x, x, c, +1, acc, N, shuge, shuge, shuge, shuge, shuge, Fm, &opts);
+  printf("5d3many XK prod too big:\tier=%d (should complain)\n", ier);
+
 
   free(x);
   free(c);

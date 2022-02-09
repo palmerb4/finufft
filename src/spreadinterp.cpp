@@ -291,15 +291,11 @@ int indexSort(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N4, 
     if (sort_nthr == 0)                       // use auto choice: when N>>M, one thread is better!
       sort_nthr = (10 * M > N) ? maxnthr : 1; // heuristic
     if (sort_nthr == 1) {
-      fprintf(stderr, "%s begin bin_sort_singlethread\n", __func__);
       bin_sort_singlethread(sort_indices, M, kx, ky, kz, kp, kq, N1, N2, N3, N4, N5, opts.pirange, bin_size_x,
                             bin_size_y, bin_size_z, bin_size_p, bin_size_q, sort_debug);
-      fprintf(stderr, "%s bin_sort_singlethread\n", __func__);
     } else { // sort_nthr>1, sets # threads
-      fprintf(stderr, "%s begin bin_sort_multithread\n", __func__);
       bin_sort_multithread(sort_indices, M, kx, ky, kz, kp, kq, N1, N2, N3, N4, N5, opts.pirange, bin_size_x,
                            bin_size_y, bin_size_z, bin_size_p, bin_size_q, sort_debug, sort_nthr);
-      fprintf(stderr, "%s bin_sort_multithread\n", __func__);
     }
     if (opts.debug)
       printf("\tsorted (%d threads):\t%.3g s\n", sort_nthr, timer.elapsedsec());
@@ -323,14 +319,18 @@ int spreadinterpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BI
    Split out by Melody Shih, Jun 2018; renamed Barnett 5/20/20.
 */
 {
-  if (opts.spread_direction == 1) // ========= direction 1 (spreading) =======
+  if (opts.spread_direction == 1) {// ========= direction 1 (spreading) =======
+    fprintf(stderr, "start spreadSorted\n");
     spreadSorted(sort_indices, N1, N2, N3, N4, N5, data_uniform, M, kx, ky, kz, kp, kq, data_nonuniform, opts,
                  did_sort);
+    fprintf(stderr, "end spreadSorted\n");
 
-  else // ================= direction 2 (interpolation) ===========
+  } else {// ================= direction 2 (interpolation) ===========
+    fprintf(stderr, "start interpSorted\n");
     interpSorted(sort_indices, N1, N2, N3, N4, N5, data_uniform, M, kx, ky, kz, kp, kq, data_nonuniform, opts,
                  did_sort);
-
+    fprintf(stderr, "end interpSorted\n");
+  }
   return 0;
 }
 
@@ -507,6 +507,7 @@ int interpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N
 // Interpolate to NU pts in sorted order from a uniform grid.
 // See spreadinterp() for doc.
 {
+  fprintf(stderr, "entering interpSorted\n");
   CNTime timer;
   int ndims = ndims_from_Ns(N1, N2, N3, N4, N5);
   int ns = opts.nspread;               // abbrev. for w, kernel width
@@ -526,8 +527,8 @@ int interpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N
     FLT xjlist[CHUNKSIZE], yjlist[CHUNKSIZE], zjlist[CHUNKSIZE], pjlist[CHUNKSIZE], qjlist[CHUNKSIZE];
     FLT outbuf[2 * CHUNKSIZE];
     // Kernels: static alloc is faster, so we do it for up to 5D (probably a bad idea in for dim>3)...
-    FLT kernel_args[3 * MAX_NSPREAD];
-    FLT kernel_values[3 * MAX_NSPREAD];
+    FLT kernel_args[5 * MAX_NSPREAD];
+    FLT kernel_values[5 * MAX_NSPREAD];
     FLT *ker1 = kernel_values;
     FLT *ker2 = kernel_values + ns;
     FLT *ker3 = kernel_values + 2 * ns;
@@ -544,13 +545,13 @@ int interpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N
         BIGINT j = sort_indices[i + ibuf];
         jlist[ibuf] = j;
         xjlist[ibuf] = FOLDRESCALE(kx[j], N1, opts.pirange);
-        if (ndims >= 2)
+        if (ndims > 1)
           yjlist[ibuf] = FOLDRESCALE(ky[j], N2, opts.pirange);
-        if (ndims == 3)
+        if (ndims > 2)
           zjlist[ibuf] = FOLDRESCALE(kz[j], N3, opts.pirange);
-        if (ndims == 4)
+        if (ndims > 3)
           pjlist[ibuf] = FOLDRESCALE(kp[j], N4, opts.pirange);
-        if (ndims == 5)
+        if (ndims > 4)
           qjlist[ibuf] = FOLDRESCALE(kq[j], N5, opts.pirange);
       }
 
@@ -567,9 +568,9 @@ int interpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N
         // coords (x,y,z,p,q), spread block corner index (i1,i2,i3,i4,i5) of current NU targ
         BIGINT i1 = (BIGINT)std::ceil(xj - ns2);                   // leftmost grid index
         BIGINT i2 = (ndims > 1) ? (BIGINT)std::ceil(yj - ns2) : 0; // min y grid index
-        BIGINT i3 = (ndims > 1) ? (BIGINT)std::ceil(zj - ns2) : 0; // min z grid index
-        BIGINT i4 = (ndims > 1) ? (BIGINT)std::ceil(pj - ns2) : 0; // min p grid index
-        BIGINT i5 = (ndims > 1) ? (BIGINT)std::ceil(qj - ns2) : 0; // min q grid index
+        BIGINT i3 = (ndims > 2) ? (BIGINT)std::ceil(zj - ns2) : 0; // min z grid index 
+        BIGINT i4 = (ndims > 3) ? (BIGINT)std::ceil(pj - ns2) : 0; // min p grid index
+        BIGINT i5 = (ndims > 4) ? (BIGINT)std::ceil(qj - ns2) : 0; // min q grid index
 
         FLT x1 = (FLT)i1 - xj; // shift of ker center, in [-w/2,-w/2+1]
         FLT x2 = (ndims > 1) ? (FLT)i2 - yj : 0;
@@ -591,9 +592,7 @@ int interpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N
               set_kernel_args(kernel_args + 4 * ns, x5, opts);
 
             evaluate_kernel_vector(kernel_values, kernel_args, opts, ndims * ns);
-          }
-
-          else {
+          } else {
             eval_kernel_vec_Horner(ker1, x1, ns, opts);
             if (ndims > 1)
               eval_kernel_vec_Horner(ker2, x2, ns, opts);
@@ -988,7 +987,8 @@ void interp_hypercube_4D(FLT *target, FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, 
 // Palmer 9/14/21
 {
   FLT out[] = {0.0, 0.0};
-  if (i1 >= 0 && i1 + ns <= N1 && i2 >= 0 && i2 + ns <= N2 && i3 >= 0 && i3 + ns <= N3 && i4 >= 0 && i4 + ns <= N4) {
+  // if (i1 >= 0 && i1 + ns <= N1 && i2 >= 0 && i2 + ns <= N2 && i3 >= 0 && i3 + ns <= N3 && i4 >= 0 && i4 + ns <= N4) {
+  if (false) {
     // no wrapping: avoid ptrs
     for (int dp = 0; dp < ns; dp++) {
       BIGINT op = N1 * N2 * N3 * (i4 + dp); // offset due to p
@@ -1007,7 +1007,7 @@ void interp_hypercube_4D(FLT *target, FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, 
         }
       }
     }
-  } else {                                                                     // wraps somewhere: use ptr list (slower)
+  } else {    // wraps somewhere: use ptr list (slower)
     BIGINT j1[MAX_NSPREAD], j2[MAX_NSPREAD], j3[MAX_NSPREAD], j4[MAX_NSPREAD]; // 1d ptr lists
     BIGINT x = i1, y = i2, z = i3, p = i4;                                     // initialize coords
     for (int d = 0; d < ns; d++) {                                             // set up ptr lists
@@ -1119,7 +1119,7 @@ void interp_hypercube_5D(FLT *target, FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, 
         q += N5;
       if (q >= N5)
         q -= N5;
-      j4[d] = q++;
+      j5[d] = q++;
     }
     for (int dq = 0; dq < ns; dq++) {            // use the pts lists
       BIGINT oq = N1 * N2 * N3 * N4 * (i5 + dq); // offset due to q
@@ -1431,7 +1431,6 @@ void spread_subproblem_5d(BIGINT off1, BIGINT off2, BIGINT off3, BIGINT off4, BI
       set_kernel_args(kernel_args + 2 * ns, x3, opts);
       set_kernel_args(kernel_args + 3 * ns, x4, opts);
       set_kernel_args(kernel_args + 4 * ns, x5, opts);
-      evaluate_kernel_vector(kernel_values, kernel_args, opts, 4 * ns);
       evaluate_kernel_vector(kernel_values, kernel_args, opts, 5 * ns);
     } else {
       eval_kernel_vec_Horner(ker1, x1, ns, opts);

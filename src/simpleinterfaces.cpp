@@ -27,22 +27,18 @@ int invokeGuruInterface(int n_dims, int type, int n_transf, BIGINT nj, FLT *xj, 
   FINUFFT_PLAN plan;
   int ier =
       FINUFFT_MAKEPLAN(type, n_dims, n_modes, iflag, n_transf, eps, &plan, popts); // popts (ptr to opts) can be NULL
-  fprintf(stderr, "%s FINUFFT_MAKEPLAN\n", __func__);
-
   if (ier > 1) { // since 1 (a warning) still allows proceeding...
     fprintf(stderr, "FINUFFT invokeGuru: plan error (ier=%d)!\n", ier);
     return ier;
   }
 
   int ier2 = FINUFFT_SETPTS(plan, nj, xj, yj, zj, pj, qj, nk, s, t, u, v, w);
-  fprintf(stderr, "%s FINUFFT_SETPTS\n", __func__);
   if (ier2 > 1) {
     fprintf(stderr, "FINUFFT invokeGuru: setpts error (ier=%d)!\n", ier2);
     return ier2;
   }
 
   int ier3 = FINUFFT_EXECUTE(plan, cj, fk);
-  fprintf(stderr, "%s FINUFFT_EXECUTE\n", __func__);
   if (ier3 > 1) {
     fprintf(stderr, "FINUFFT invokeGuru: execute error (ier=%d)!\n", ier3);
     return ier3;
@@ -353,7 +349,7 @@ int FINUFFT5D1(BIGINT nj, FLT *xj, FLT *yj, FLT *zj, FLT *pj, FLT *qj, CPX *cj, 
                BIGINT mt, BIGINT mu, BIGINT mv, BIGINT mw, CPX *fk, nufft_opts *opts)
 //  Type-1 5D complex nonuniform FFT.   See ../docs/usage.rst
 {
-  BIGINT n_modes[] = {ms, mt, mu, mv, mw, 1};
+  BIGINT n_modes[] = {ms, mt, mu, mv, mw};
   int n_dims = 5;
   int n_transf = 1;
   int type = 1;
@@ -366,7 +362,7 @@ int FINUFFT5D1MANY(int n_transf, BIGINT nj, FLT *xj, FLT *yj, FLT *zj, FLT *pj, 
                    BIGINT ms, BIGINT mt, BIGINT mu, BIGINT mv, BIGINT mw, CPX *fk, nufft_opts *opts)
 // Type-1 5D complex nonuniform FFT, many vectors.  See ../docs/usage.rst
 {
-  BIGINT n_modes[] = {ms, mt, mu, mv, mw, 1};
+  BIGINT n_modes[] = {ms, mt, mu, mv, mw};
   int n_dims = 5;
   int type = 1;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, zj, pj, qj, cj, iflag, eps, n_modes, 0, NULL, NULL,
@@ -378,7 +374,7 @@ int FINUFFT5D2(BIGINT nj, FLT *xj, FLT *yj, FLT *zj, FLT *pj, FLT *qj, CPX *cj, 
                BIGINT mt, BIGINT mu, BIGINT mv, BIGINT mw, CPX *fk, nufft_opts *opts)
 // Type-2 5D complex nonuniform FFT.   See ../docs/usage.rst
 {
-  BIGINT n_modes[] = {ms, mt, mu, mv, mw, 1};
+  BIGINT n_modes[] = {ms, mt, mu, mv, mw};
   int n_dims = 5;
   int n_transf = 1;
   int type = 2;
@@ -391,7 +387,7 @@ int FINUFFT5D2MANY(int n_transf, BIGINT nj, FLT *xj, FLT *yj, FLT *zj, FLT *pj, 
                    BIGINT ms, BIGINT mt, BIGINT mu, BIGINT mv, BIGINT mw, CPX *fk, nufft_opts *opts)
 // Type-2 5D complex nonuniform FFT, many vectors.   See ../docs/usage.rst
 {
-  BIGINT n_modes[] = {ms, mt, mu, mv, mw, 1};
+  BIGINT n_modes[] = {ms, mt, mu, mv, mw};
   int n_dims = 5;
   int type = 2;
   int ier = invokeGuruInterface(n_dims, type, n_transf, nj, xj, yj, zj, pj, qj, cj, iflag, eps, n_modes, 0, NULL, NULL,
