@@ -7,7 +7,7 @@ const char *help[] = {"Tester for FINUFFT in 5d, all 3 types, either precision."
                       "",
                       "Usage: finufft5d_test Nmodes1 Nmodes2 Nmodes3 Nmodes4 Nmodes5 Nsrc [tol [debug [spread_sort "
                       "[upsampfac [errfail]]]]]",
-                      "\teg:\tfinufft5d_test 100 20 20 20 20 1e6 1e-12 0 2 0.0 1e-11",
+                      "\teg:\tfinufft5d_test 20 20 20 20 20 1e6 1e-12 0 2 0.0 1e-11",
                       "\tnotes:\tif errfail present, exit code 1 if any error > errfail",
                       NULL};
 // Barnett 2/2/17 onwards.
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
            (long long)N1, (long long)N2, (long long)N3, (long long)N4, (long long)N5, ti, M / ti);
 
   BIGINT nt1 = (BIGINT)(0.37 * N1), nt2 = (BIGINT)(0.26 * N2), nt3 = (BIGINT)(-0.39 * N3), nt4 = (BIGINT)(-0.39 * N4),
-         nt5 = (BIGINT)(-0.39 * N5); // choose mode to check
+         nt5 = (BIGINT)(0.15 * N5); // choose mode to check
   FLT Ftr = 0, Fti = 0;              // crude direct...
 #pragma omp parallel for schedule(static, TEST_RANDCHUNK) reduction(+ : Ftr, Fti)
   for (BIGINT j = 0; j < M; ++j) { // Ft += c[j] * exp(J*(nt1*x[j] + nt2*y[j] + nt3*z[j] + nt4*p[j] + nt5*q[j]))

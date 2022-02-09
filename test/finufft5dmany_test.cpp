@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     sscanf(argv[14], "%lf", &errfail);
 
   cout << scientific << setprecision(15);
-  BIGINT N = N1 * N2 * N3 * N4;
+  BIGINT N = N1 * N2 * N3 * N4 * N5;
 
   FLT *x = (FLT *)malloc(sizeof(FLT) * M);           // NU pts x coords
   FLT *y = (FLT *)malloc(sizeof(FLT) * M);           // NU pts y coords

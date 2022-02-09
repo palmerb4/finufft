@@ -62,8 +62,8 @@ int main(int argc, char *argv[])
   // for (int k=0;k<N;++k) printf("F[%d] = %g+%gi\n",k,real(F[k]),imag(F[k]));
   // for (int j=0;j<M;++j) printf("c[%d] = %g+%gi\n",j,real(c[j]),imag(c[j]));
   // printf("%.3g %3g\n",twonorm(N,F),twonorm(M,c));
-  opts.debug = 2; // set to 1,2, to debug segfaults
-  opts.spread_debug = 2;
+  opts.debug = 0; // set to 1,2, to debug segfaults
+  opts.spread_debug = 0;
 
   printf("##############################\n");
   printf("1D dumb cases ----------------\n");
