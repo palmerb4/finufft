@@ -566,10 +566,8 @@ int spreadinterpSortedBatch(int batchSize, FINUFFT_PLAN p, CPX *cBatch)
   for (int i = 0; i < batchSize; i++) {
     FFTW_CPX *fwi = p->fwBatch + i * p->nf; // start of i'th fw array in wkspace
     CPX *ci = cBatch + i * p->nj;           // start of i'th c array in cBatch
-    fprintf(stderr, "start spreadinterpSorted\n");
     spreadinterpSorted(p->sortIndices, p->nf1, p->nf2, p->nf3, p->nf4, p->nf5, (FLT *)fwi, p->nj, p->X, p->Y, p->Z,
                        p->P, p->Q, (FLT *)ci, p->spopts, p->didSort);
-    fprintf(stderr, "end spreadinterpSorted\n");
   }
   return 0;
 }
@@ -1286,14 +1284,10 @@ int FINUFFT_EXECUTE(FINUFFT_PLAN p, CPX *cj, CPX *fk) {
       // STEP 3: (varies by type)
       timer.restart();
       if (p->type == 1) { // type 1: deconvolve (amplify) fw and shuffle to fk
-        fprintf(stderr, "start deconvolveBatch\n");
         deconvolveBatch(thisBatchSize, p, fkb);
-        fprintf(stderr, "end deconvolveBatch\n");
         t_deconv += timer.elapsedsec();
       } else { // type 2: interpolate unif fw grid to NU target pts
-        fprintf(stderr, "start spreadinterpSortedBatch\n");
         spreadinterpSortedBatch(thisBatchSize, p, cjb);
-        fprintf(stderr, "end spreadinterpSortedBatch\n");
         t_sprint += timer.elapsedsec();
       }
     } // ........end b loop

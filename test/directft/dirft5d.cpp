@@ -95,7 +95,7 @@ void dirft5d2(BIGINT nj, FLT *x, FLT *y, FLT *z, FLT *p, FLT *q, CPX *c, int ifl
     CPX p5 = pow(a5, (FLT)k5min);
     CPX cc = CPX(0, 0);
     BIGINT m = 0; // input pointer
-    for (BIGINT m4 = 0; m4 < mv; ++m4) {
+    for (BIGINT m5 = 0; m5 < mw; ++m5) {
       CPX p4 = sp4;
       for (BIGINT m4 = 0; m4 < mv; ++m4) {
         CPX p3 = sp3;

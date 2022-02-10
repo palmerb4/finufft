@@ -19,7 +19,7 @@ if [[ $1 == "SINGLE" ]]; then
     # what's weird is that tol=1e-6 here gives *worse* single-prec errs >2e-4 :(
     export FINUFFT_REQ_TOL=1e-5
     # acceptable error one digit above requested tol... (& rounding accum)
-    CHECK_TOL=2e-4
+    CHECK_TOL=5e-4
     # modifier for executables, exported so that check?d.sh can also access...
     export PRECSUF=f
 else
@@ -95,7 +95,7 @@ if [[ $E -eq 0 ]]; then echo passed; elif [[ $E -eq $SIGSEGV ]]; then echo crash
 
 ((N++))
 T=finufft4d_test$PRECSUF
-./$T$FEX 5 10 20 20 1e2 $FINUFFT_REQ_TOL 0 2 0.0 $CHECK_TOL 2>$DIR/$T.err.out | tee $DIR/$T.out
+./$T$FEX 5 10 20 15 1e2 $FINUFFT_REQ_TOL 0 2 0.0 $CHECK_TOL 2>$DIR/$T.err.out | tee $DIR/$T.out
 E=${PIPESTATUS[0]}
 if [[ $E -eq 0 ]]; then echo passed; elif [[ $E -eq $SIGSEGV ]]; then echo crashed; ((CRASHES++)); else echo failed; ((FAILS++)); fi
 
@@ -107,13 +107,13 @@ if [[ $E -eq 0 ]]; then echo passed; elif [[ $E -eq $SIGSEGV ]]; then echo crash
 
 ((N++))
 T=finufft5d_test$PRECSUF
-./$T$FEX 5 10 20 20 5 1e2 $FINUFFT_REQ_TOL 0 2 0.0 $CHECK_TOL 2>$DIR/$T.err.out | tee $DIR/$T.out
+./$T$FEX 10 12 8 13 5 1e2 $FINUFFT_REQ_TOL 0 2 0.0 $CHECK_TOL 2>$DIR/$T.err.out | tee $DIR/$T.out
 E=${PIPESTATUS[0]}
 if [[ $E -eq 0 ]]; then echo passed; elif [[ $E -eq $SIGSEGV ]]; then echo crashed; ((CRASHES++)); else echo failed; ((FAILS++)); fi
 
 ((N++))
 T=finufft5dmany_test$PRECSUF
-./$T$FEX 2 10 50 20 10 5 1e2 $FINUFFT_REQ_TOL 0 0 0 2 0.0 $CHECK_TOL 2>$DIR/$T.err.out | tee $DIR/$T.out
+./$T$FEX 2 10 6 8 7 5 1e2 $FINUFFT_REQ_TOL 0 0 0 2 0.0 $CHECK_TOL 2>$DIR/$T.err.out | tee $DIR/$T.out
 E=${PIPESTATUS[0]}
 if [[ $E -eq 0 ]]; then echo passed; elif [[ $E -eq $SIGSEGV ]]; then echo crashed; ((CRASHES++)); else echo failed; ((FAILS++)); fi
 

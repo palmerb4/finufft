@@ -526,7 +526,7 @@ int interpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N
     BIGINT jlist[CHUNKSIZE];
     FLT xjlist[CHUNKSIZE], yjlist[CHUNKSIZE], zjlist[CHUNKSIZE], pjlist[CHUNKSIZE], qjlist[CHUNKSIZE];
     FLT outbuf[2 * CHUNKSIZE];
-    // Kernels: static alloc is faster, so we do it for up to 5D (probably a bad idea in for dim>3)...
+    // Kernels: static alloc is faster, so we do it for up to 5D (probably a bad idea in for dim>3!)...
     FLT kernel_args[5 * MAX_NSPREAD];
     FLT kernel_values[5 * MAX_NSPREAD];
     FLT *ker1 = kernel_values;
@@ -1067,7 +1067,8 @@ void interp_hypercube_5D(FLT *target, FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, 
 // Palmer 9/14/21
 {
   FLT out[] = {0.0, 0.0};
-  if (i1 >= 0 && i1 + ns <= N1 && i2 >= 0 && i2 + ns <= N2 && i3 >= 0 && i3 + ns <= N3 && i4 >= 0 && i4 + ns <= N4 &&
+  if (i1 >= 0 && i1 + ns <= N1 && i2 >= 0 && i2 + ns <= N2 && 
+      i3 >= 0 && i3 + ns <= N3 && i4 >= 0 && i4 + ns <= N4 &&
       i5 >= 0 && i5 + ns <= N5) {
     // no wrapping: avoid ptrs
     for (int dq = 0; dq < ns; dq++) {
@@ -1122,7 +1123,7 @@ void interp_hypercube_5D(FLT *target, FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, 
       j5[d] = q++;
     }
     for (int dq = 0; dq < ns; dq++) {            // use the pts lists
-      BIGINT oq = N1 * N2 * N3 * N4 * (i5 + dq); // offset due to q
+      BIGINT oq = N1 * N2 * N3 * N4 * j5[dq]; // offset due to q
       for (int dp = 0; dp < ns; dp++) {
         BIGINT op = N1 * N2 * N3 * j4[dp]; // offset due to p
         FLT ker45 = ker4[dp] * ker5[dq];
@@ -1130,7 +1131,7 @@ void interp_hypercube_5D(FLT *target, FLT *du, FLT *ker1, FLT *ker2, FLT *ker3, 
           BIGINT oz = N1 * N2 * j3[dz]; // offset due to z
           FLT ker345 = ker3[dz] * ker45;
           for (int dy = 0; dy < ns; dy++) {
-            BIGINT oy = op + oz + N1 * j2[dy]; // offset due to y & z
+            BIGINT oy = oq + op + oz + N1 * j2[dy]; // offset due to y & z
             FLT ker2345 = ker2[dy] * ker345;
             for (int dx = 0; dx < ns; dx++) {
               FLT k = ker1[dx] * ker2345;
