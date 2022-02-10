@@ -4,7 +4,7 @@
 using namespace std;
 
 // forward declaration of helper to (repeatedly if needed) call finufft?d?
-double many_simple_calls(CPX *c, CPX *F, FLT *x, FLT *y, FLT *z, FINUFFT_PLAN plan);
+double many_simple_calls(CPX *c, CPX *F, FLT *x, FLT *y, FLT *z, FLT *p, FLT *q, FINUFFT_PLAN plan);
 
 // --------------------------------------------------------------------------
 int main(int argc, char *argv[])
@@ -42,54 +42,62 @@ int main(int argc, char *argv[])
 {
   double tsleep = 0.1; // how long wait between tests to let FFTW settle (1.0?)
   int ntransf, type, ndim;
-  BIGINT M, N1, N2, N3; // M = # srcs, N1,N2,N3= # modes in each dim
-  double w, tol = 1e-6;
+  BIGINT M, N1, N2, N3, N4, N5; // M = # srcs, N1,N2,N3,N4,N5 = # modes in each dim
+  double tmp, tol = 1e-6;
   int isign = +1; // choose which exponential sign to test
   nufft_opts opts;
   FINUFFT_DEFAULT_OPTS(&opts); // for guru interface
 
   // Collect command line arguments ------------------------------------------
-  if (argc < 8 || argc > 14) {
-    fprintf(stderr, "Usage: finufftGuru_test ntransf type ndim N1 N2 N3 Nsrc [tol [debug [spread_thread [maxbatchsize "
-                    "[spread_sort [upsampfac]]]]]]\n\teg:\tfinufftGuru_test 100 1 2 1e2 1e2 0 1e6 1e-3 1 0 0 2\n");
+  if (argc < 10 || argc > 16) {
+    fprintf(stderr, "Usage: finufftGuru_test ntransf type ndim N1 N2 N3 N4 N5 Nsrc [tol [debug [spread_thread [maxbatchsize "
+                    "[spread_sort [upsampfac]]]]]]\n\teg:\tfinufftGuru_test 100 1 2 1e2 1e2 0 0 0 1e6 1e-3 1 0 0 2\n");
     return 1;
   }
   sscanf(argv[1], "%d", &ntransf);
   sscanf(argv[2], "%d", &type);
   sscanf(argv[3], "%d", &ndim);
-  sscanf(argv[4], "%lf", &w);
-  N1 = (BIGINT)w;
-  sscanf(argv[5], "%lf", &w);
-  N2 = (BIGINT)w;
-  sscanf(argv[6], "%lf", &w);
-  N3 = (BIGINT)w;
-  sscanf(argv[7], "%lf", &w);
-  M = (BIGINT)w;
-  if (argc > 8)
-    sscanf(argv[8], "%lf", &tol);
-  if (argc > 9)
-    sscanf(argv[9], "%d", &opts.debug);
-  opts.spread_debug = (opts.debug > 1) ? 1 : 0; // see output from spreader
+  sscanf(argv[4], "%lf", &tmp);
+  N1 = (BIGINT)tmp;
+  sscanf(argv[5], "%lf", &tmp);
+  N2 = (BIGINT)tmp;
+  sscanf(argv[6], "%lf", &tmp);
+  N3 = (BIGINT)tmp;
+  sscanf(argv[7], "%lf", &tmp);
+  N4 = (BIGINT)tmp;
+  sscanf(argv[8], "%lf", &tmp);
+  N5 = (BIGINT)tmp;
+  sscanf(argv[9], "%lf", &tmp);
+  M = (BIGINT)tmp;
   if (argc > 10)
-    sscanf(argv[10], "%d", &opts.spread_thread);
+    sscanf(argv[10], "%lf", &tol);
   if (argc > 11)
-    sscanf(argv[11], "%d", &opts.maxbatchsize);
+    sscanf(argv[11], "%d", &opts.debug);
+  opts.spread_debug = (opts.debug > 1) ? 1 : 0; // see output from spreader
   if (argc > 12)
-    sscanf(argv[12], "%d", &opts.spread_sort);
-  if (argc > 13) {
-    sscanf(argv[13], "%lf", &w);
-    opts.upsampfac = (FLT)w;
+    sscanf(argv[12], "%d", &opts.spread_thread);
+  if (argc > 13)
+    sscanf(argv[13], "%d", &opts.maxbatchsize);
+  if (argc > 14)
+    sscanf(argv[14], "%d", &opts.spread_sort);
+  if (argc > 15) {
+    sscanf(argv[15], "%lf", &tmp);
+    opts.upsampfac = (FLT)tmp;
   }
 
   // Allocate and initialize input -------------------------------------------
   cout << scientific << setprecision(15);
   N2 = (N2 == 0) ? 1 : N2;
   N3 = (N3 == 0) ? 1 : N3;
-  BIGINT N = N1 * N2 * N3;
+  N4 = (N4 == 0) ? 1 : N4;
+  N5 = (N5 == 0) ? 1 : N5;
+  BIGINT N = N1 * N2 * N3 * N4 * N5;
 
   FLT *s = NULL;
   FLT *t = NULL;
   FLT *u = NULL;
+  FLT *v = NULL;
+  FLT *w = NULL;
   if (type == 3) {                      // make target freq NU pts for type 3 (N of them)...
     s = (FLT *)malloc(sizeof(FLT) * N); // targ freqs (1-cmpt)
     FLT S1 = (FLT)N1 / 2;
@@ -116,17 +124,37 @@ int main(int argc, char *argv[])
           u[k] = S3 * (0.9 + randm11r(&se));
         }
       }
+      if (ndim > 3) {
+        v = (FLT *)malloc(sizeof(FLT) * N); // targ freqs (3-cmpt)
+        FLT S4 = (FLT)N4 / 2;
+#pragma omp for schedule(dynamic, TEST_RANDCHUNK)
+        for (BIGINT k = 0; k < N; ++k) {
+          v[k] = S4 * (0.1 + randm11r(&se));
+        }
+      }
+      if (ndim > 4) {
+        w = (FLT *)malloc(sizeof(FLT) * N); // targ freqs (3-cmpt)
+        FLT S5 = (FLT)N5 / 2;
+#pragma omp for schedule(dynamic, TEST_RANDCHUNK)
+        for (BIGINT k = 0; k < N; ++k) {
+          w[k] = S5 * (-0.3 + randm11r(&se));
+        }
+      }
     }
   }
 
   CPX *c = (CPX *)malloc(sizeof(CPX) * M * ntransf); // strengths
   CPX *F = (CPX *)malloc(sizeof(CPX) * N * ntransf); // mode ampls
 
-  FLT *x = (FLT *)malloc(sizeof(FLT) * M), *y = NULL, *z = NULL; // NU pts x coords
+  FLT *x = (FLT *)malloc(sizeof(FLT) * M), *y = NULL, *z = NULL, *p = NULL, *q = NULL; // NU pts x coords
   if (ndim > 1)
     y = (FLT *)malloc(sizeof(FLT) * M); // NU pts y coords
   if (ndim > 2)
     z = (FLT *)malloc(sizeof(FLT) * M); // NU pts z coords
+  if (ndim > 3)
+    p = (FLT *)malloc(sizeof(FLT) * M); // NU pts p coords
+  if (ndim > 4)
+    q = (FLT *)malloc(sizeof(FLT) * M); // NU pts q coords
 #pragma omp parallel
   {
     unsigned int se = MY_OMP_GET_THREAD_NUM(); // needed for parallel random #s
@@ -137,6 +165,10 @@ int main(int argc, char *argv[])
         y[j] = M_PI * randm11r(&se);
       if (z)
         z[j] = M_PI * randm11r(&se);
+      if (z)
+        p[j] = M_PI * randm11r(&se);
+      if (z)
+        q[j] = M_PI * randm11r(&se);
     }
 #pragma omp for schedule(dynamic, TEST_RANDCHUNK)
     for (BIGINT i = 0; i < ntransf * M; i++) // random strengths
@@ -154,7 +186,7 @@ int main(int argc, char *argv[])
   FINUFFT_PLAN plan; // instantiate a finufft_plan
   CNTime timer;
   timer.start();                    // Guru Step 1
-  BIGINT n_modes[3] = {N1, N2, N3}; // #modes per dimension (ignored for t3)
+  BIGINT n_modes[5] = {N1, N2, N3, N4, N5}; // #modes per dimension (ignored for t3)
   int ier = FINUFFT_MAKEPLAN(type, ndim, n_modes, isign, ntransf, tol, &plan, &opts);
   // (NB: the opts struct can no longer be modified with effect!)
   double plan_t = timer.elapsedsec();
@@ -169,7 +201,7 @@ int main(int argc, char *argv[])
   }
 
   timer.restart();                                    // Guru Step 2
-  ier = FINUFFT_SETPTS(plan, M, x, y, z, N, s, t, u); //(t1,2: N,s,t,u ignored)
+  ier = FINUFFT_SETPTS(plan, M, x, y, z, p, q, N, s, t, u, v, w); //(t1,2: N,s,t,u,v,w ignored)
   double sort_t = timer.elapsedsec();
   if (ier) {
     printf("error (ier=%d)!\n", ier);
@@ -215,7 +247,7 @@ int main(int argc, char *argv[])
   // this used to actually call Alex's old (v1.1) src/finufft?d.cpp routines.
   // Since we don't want to ship those, we now call the simple interfaces.
 
-  double simpleTime = many_simple_calls(c, F, x, y, z, plan);
+  double simpleTime = many_simple_calls(c, F, x, y, z, p, q, plan);
   if (isnan(simpleTime))
     return 1;
 
@@ -238,15 +270,19 @@ int main(int argc, char *argv[])
   free(x);
   free(y);
   free(z);
+  free(p);
+  free(q);
   free(s);
   free(t);
   free(u);
+  free(v);
+  free(w);
   return 0;
 }
 
 // -------------------------------- HELPER FUNCS ----------------------------
 
-double finufftFunnel(CPX *cStart, CPX *fStart, FLT *x, FLT *y, FLT *z, FINUFFT_PLAN plan)
+double finufftFunnel(CPX *cStart, CPX *fStart, FLT *x, FLT *y, FLT *z, FLT *p, FLT *q, FINUFFT_PLAN plan)
 /* Helper to make a simple interface call with parameters pulled out of a
    guru-interface plan. Reads opts from the
    finufft plan, and the pointers to various data vectors that users shouldn't
@@ -368,12 +404,86 @@ double finufftFunnel(CPX *cStart, CPX *fStart, FLT *x, FLT *y, FLT *z, FINUFFT_P
       return fail;
     }
 
+  case 4: // 4D
+    switch (plan->type) {
+
+    case 1:
+      timer.restart();
+      ier =
+          FINUFFT4D1(plan->nj, x, y, z, p, cStart, plan->fftSign, plan->tol, plan->ms, plan->mt, plan->mu, plan->mv, fStart, popts);
+      t = timer.elapsedsec();
+      if (ier)
+        return fail;
+      else
+        return t;
+
+    case 2:
+      timer.restart();
+      ier =
+          FINUFFT4D2(plan->nj, x, y, z, p, cStart, plan->fftSign, plan->tol, plan->ms, plan->mt, plan->mu, plan->mv, fStart, popts);
+      t = timer.elapsedsec();
+      if (ier)
+        return fail;
+      else
+        return t;
+
+    case 3:
+      timer.restart();
+      ier = FINUFFT4D3(plan->nj, x, y, z, p, cStart, plan->fftSign, plan->tol, plan->nk, plan->S, plan->T, plan->U, plan->V, fStart,
+                       popts);
+      t = timer.elapsedsec();
+      if (ier)
+        return fail;
+      else
+        return t;
+
+    default: // invalid type
+      return fail;
+    }
+    
+  case 5: // 5D
+    switch (plan->type) {
+
+    case 1:
+      timer.restart();
+      ier =
+          FINUFFT5D1(plan->nj, x, y, z, p, q, cStart, plan->fftSign, plan->tol, plan->ms, plan->mt, plan->mu, plan->mv, plan->mw, fStart, popts);
+      t = timer.elapsedsec();
+      if (ier)
+        return fail;
+      else
+        return t;
+
+    case 2:
+      timer.restart();
+      ier =
+          FINUFFT5D2(plan->nj, x, y, z, p, q, cStart, plan->fftSign, plan->tol, plan->ms, plan->mt, plan->mu, plan->mv, plan->mw, fStart, popts);
+      t = timer.elapsedsec();
+      if (ier)
+        return fail;
+      else
+        return t;
+
+    case 3:
+      timer.restart();
+      ier = FINUFFT5D3(plan->nj, x, y, z, p, q, cStart, plan->fftSign, plan->tol, plan->nk, plan->S, plan->T, plan->U, plan->V, plan->W, fStart,
+                       popts);
+      t = timer.elapsedsec();
+      if (ier)
+        return fail;
+      else
+        return t;
+
+    default: // invalid type
+      return fail;
+    }
+
   default: // invalid dimension
     return fail;
   }
 }
 
-double many_simple_calls(CPX *c, CPX *F, FLT *x, FLT *y, FLT *z, FINUFFT_PLAN plan)
+double many_simple_calls(CPX *c, CPX *F, FLT *x, FLT *y, FLT *z, FLT *p, FLT *q, FINUFFT_PLAN plan)
 /* A unified interface to all of the simple interfaces, with a loop over
    many such transforms. Returns total time reported by the transforms.
    (Used to call pre-v1.2 single implementations in finufft, via runOldFinufft.
@@ -390,7 +500,7 @@ double many_simple_calls(CPX *c, CPX *F, FLT *x, FLT *y, FLT *z, FINUFFT_PLAN pl
 
   for (int k = 0; k < plan->ntrans; k++) {
     cStart = c + plan->nj * k;
-    fStart = F + plan->ms * plan->mt * plan->mu * k;
+    fStart = F + plan->ms * plan->mt * plan->mu * plan->mv * plan->mw * k;
 
     // printf("k=%d, debug=%d.................\n",k, plan->opts.debug);
     if (k != 0) { // prevent massive debug output
@@ -398,7 +508,7 @@ double many_simple_calls(CPX *c, CPX *F, FLT *x, FLT *y, FLT *z, FINUFFT_PLAN pl
       plan->opts.spread_debug = 0;
     }
 
-    temp = finufftFunnel(cStart, fStart, x, y, z, plan);
+    temp = finufftFunnel(cStart, fStart, x, y, z, p, q, plan);
     if (isnan(temp)) {
       fprintf(stderr, "[%s] Funnel call to finufft failed!\n", __func__);
       return NAN;

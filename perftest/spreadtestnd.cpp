@@ -10,7 +10,7 @@
 
 void usage() {
   printf("usage: spreadtestnd dims [M N [tol [sort [flags [debug [kerpad [kerevalmeth [upsampfac]]]]]]]]\n\twhere "
-         "dims=1,2 or 3\n\tM=# nonuniform pts\n\tN=# uniform pts\n\ttol=requested accuracy\n\tsort=0 (don't sort NU "
+         "dims=1,2,3,4, or 5\n\tM=# nonuniform pts\n\tN=# uniform pts\n\ttol=requested accuracy\n\tsort=0 (don't sort NU "
          "pts), 1 (do), or 2 (maybe sort; default)\n\tflags: expert timing flags, 0 is default (see "
          "spreadinterp.h)\n\tdebug=0 (less text out), 1 (more), 2 (lots)\n\tkerpad=0 (no pad to mult of 4), 1 (do, for "
          "kerevalmeth=0 only)\n\tkerevalmeth=0 (direct), 1 (Horner ppval)\n\tupsampfac>1; 2 or 1.25 for "
@@ -18,7 +18,7 @@ void usage() {
 }
 
 int main(int argc, char *argv[])
-/* Test executable for the 1D, 2D, or 3D C++ spreader, both directions.
+/* Test executable for the 1D, 2D, 3D, 4D, or 5D C++ spreader, both directions.
  * It checks speed, and basic correctness via the grid sum of the result.
  * See usage() for usage.  Note it currently tests only pirange=0, which is not
  * the use case in finufft, and can differ in speed (see devel/foldrescale*)
@@ -120,12 +120,19 @@ int main(int argc, char *argv[])
   int dodir1 = true;                                         // control if dir=1 tested at all
   BIGINT N = (BIGINT)round(pow(roughNg, 1.0 / d));           // Fourier grid size per dim
   BIGINT Ng = (BIGINT)pow(N, d);                             // actual total grid points
-  BIGINT N2 = (d >= 2) ? N : 1, N3 = (d == 3) ? N : 1;       // the y and z grid sizes
-  std::vector<FLT> kx(M), ky(1), kz(1), d_nonuniform(2 * M); // NU, Re & Im
+  BIGINT N2 = (d > 1) ? N : 1;                               // the y grid size
+  BIGINT N3 = (d > 2) ? N : 1;                               // the z grid size
+  BIGINT N4 = (d > 3) ? N : 1;                               // the p grid size
+  BIGINT N5 = (d > 4) ? N : 1;                               // the q grid size
+  std::vector<FLT> kx(M), ky(1), kz(1), kp(1), kq(1), d_nonuniform(2 * M); // NU, Re & Im
   if (d > 1)
     ky.resize(M); // only alloc needed coords
   if (d > 2)
     kz.resize(M);
+  if (d > 3)
+    kp.resize(M);
+  if (d > 4)
+    kq.resize(M);
   std::vector<FLT> d_uniform(2 * Ng); // Re and Im
 
   spread_opts opts;
@@ -151,8 +158,8 @@ int main(int argc, char *argv[])
   opts.spread_direction = 1;
   d_nonuniform[0] = 1.0;
   d_nonuniform[1] = 0.0;           // unit strength
-  kx[0] = ky[0] = kz[0] = N / 2.0; // at center
-  int ier = spreadinterp(N, N2, N3, d_uniform.data(), 1, kx.data(), ky.data(), kz.data(), d_nonuniform.data(),
+  kx[0] = ky[0] = kz[0] = kp[0] = kq[0] = N / 2.0; // at center
+  int ier = spreadinterp(N, N2, N3, N4, N5, d_uniform.data(), 1, kx.data(), ky.data(), kz.data(), kp.data(), kq.data(), d_nonuniform.data(),
                          opts); // vector::data officially C++11 but works
   if (ier != 0) {
     printf("error when spreading M=1 pt for ref acc check (ier=%d)!\n", ier);
@@ -178,6 +185,10 @@ int main(int argc, char *argv[])
         ky[i] = rand01r(&se) * N; // only fill needed coords
       if (d > 2)
         kz[i] = rand01r(&se) * N;
+      if (d > 3)
+        kp[i] = rand01r(&se) * N;
+      if (d > 4)
+        kq[i] = rand01r(&se) * N;
       d_nonuniform[i * 2] = randm11r(&se);
       d_nonuniform[i * 2 + 1] = randm11r(&se);
       strre += d_nonuniform[2 * i];
@@ -190,7 +201,7 @@ int main(int argc, char *argv[])
     printf("spreadinterp %dD, %.3g U pts, dir=%d, tol=%.3g: nspread=%d\n", d, (double)Ng, opts.spread_direction, tol,
            opts.nspread);
     timer.start();
-    ier = spreadinterp(N, N2, N3, d_uniform.data(), M, kx.data(), ky.data(), kz.data(), d_nonuniform.data(), opts);
+    ier = spreadinterp(N, N2, N3, N4, N5, d_uniform.data(), M, kx.data(), ky.data(), kz.data(), kp.data(), kq.data(), d_nonuniform.data(), opts);
     t = timer.elapsedsec();
     if (ier != 0) {
       printf("error (ier=%d)!\n", ier);
@@ -231,6 +242,10 @@ int main(int argc, char *argv[])
         ky[i] = rand01r(&s) * N;
       if (d > 2)
         kz[i] = rand01r(&s) * N;
+      if (d > 3)
+        kp[i] = rand01r(&s) * N;
+      if (d > 4)
+        kq[i] = rand01r(&s) * N;
     }
   }
 
@@ -238,7 +253,7 @@ int main(int argc, char *argv[])
   printf("spreadinterp %dD, %.3g U pts, dir=%d, tol=%.3g: nspread=%d\n", d, (double)Ng, opts.spread_direction, tol,
          opts.nspread);
   timer.restart();
-  ier = spreadinterp(N, N2, N3, d_uniform.data(), M, kx.data(), ky.data(), kz.data(), d_nonuniform.data(), opts);
+  ier = spreadinterp(N, N2, N3, N4, N5, d_uniform.data(), M, kx.data(), ky.data(), kz.data(), kp.data(), kq.data(), d_nonuniform.data(), opts);
   t = timer.elapsedsec();
   if (ier != 0) {
     printf("error (ier=%d)!\n", ier);
