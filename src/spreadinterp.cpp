@@ -503,7 +503,6 @@ int interpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BIGINT N
 // Interpolate to NU pts in sorted order from a uniform grid.
 // See spreadinterp() for doc.
 {
-  fprintf(stderr, "entering interpSorted\n");
   CNTime timer;
   int ndims = ndims_from_Ns(N1, N2, N3, N4, N5);
   int ns = opts.nspread;               // abbrev. for w, kernel width
