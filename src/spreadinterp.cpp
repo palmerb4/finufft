@@ -320,16 +320,12 @@ int spreadinterpSorted(BIGINT *sort_indices, BIGINT N1, BIGINT N2, BIGINT N3, BI
 */
 {
   if (opts.spread_direction == 1) {// ========= direction 1 (spreading) =======
-    fprintf(stderr, "start spreadSorted\n");
     spreadSorted(sort_indices, N1, N2, N3, N4, N5, data_uniform, M, kx, ky, kz, kp, kq, data_nonuniform, opts,
                  did_sort);
-    fprintf(stderr, "end spreadSorted\n");
 
   } else {// ================= direction 2 (interpolation) ===========
-    fprintf(stderr, "start interpSorted\n");
     interpSorted(sort_indices, N1, N2, N3, N4, N5, data_uniform, M, kx, ky, kz, kp, kq, data_nonuniform, opts,
                  did_sort);
-    fprintf(stderr, "end interpSorted\n");
   }
   return 0;
 }
