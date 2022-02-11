@@ -105,15 +105,17 @@ _makeplanf.argtypes = [
 _makeplanf.restypes = c_int
 
 _setpts = lib.finufft_setpts
-_setpts.argtypes = [
-    FinufftPlan, c_longlong, ndpointer(c_double), ndpointer(c_double), ndpointer(c_double),
-    ctypes.c_longlong, ndpointer(c_double), ndpointer(c_double), ndpointer(c_double)]
+_setpts.argtypes = [FinufftPlan, c_longlong, ndpointer(c_double), ndpointer(c_double), 
+                    ndpointer(c_double), ndpointer(c_double), ndpointer(c_double),
+                    ctypes.c_longlong, ndpointer(c_double), ndpointer(c_double), 
+                    ndpointer(c_double), ndpointer(c_double), ndpointer(c_double)]
 _setpts.restype = c_int
 
 _setptsf = lib.finufftf_setpts
-_setptsf.argtypes = [
-    FinufftPlanf, c_longlong, ndpointer(c_float), ndpointer(c_float), ndpointer(c_float),
-    ctypes.c_longlong, ndpointer(c_float), ndpointer(c_float), ndpointer(c_float)]
+_setptsf.argtypes = [FinufftPlanf, c_longlong, ndpointer(c_float), ndpointer(c_float), 
+                     ndpointer(c_float), ndpointer(c_float), ndpointer(c_float),
+                     ctypes.c_longlong, ndpointer(c_float), ndpointer(c_float), 
+                     ndpointer(c_float), ndpointer(c_float), ndpointer(c_float)]
 _setptsf.restype = c_int
 
 _execute = lib.finufft_execute

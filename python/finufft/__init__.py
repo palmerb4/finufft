@@ -8,11 +8,14 @@ saving FFTW plans, sorting the nonuniform points, and so on.
 
 # that was the docstring for the package finufft.
 
-__all__ = ["nufft1d1","nufft1d2","nufft1d3","nufft2d1","nufft2d2","nufft2d3","nufft3d1","nufft3d2","nufft3d3","Plan"]
+__all__ = ["nufft1d1", "nufft1d2", "nufft1d3", "nufft2d1", "nufft2d2", "nufft2d3", "nufft3d1",
+           "nufft3d2", "nufft3d3", "nufft4d1", "nufft4d2", "nufft4d3", "nufft5d1", "nufft5d2", "nufft5d3", "Plan"]
 # etc..
 
 # let's just get guru and nufft1d1 working first...
 from finufft._interfaces import Plan
-from finufft._interfaces import nufft1d1,nufft1d2,nufft1d3
-from finufft._interfaces import nufft2d1,nufft2d2,nufft2d3
-from finufft._interfaces import nufft3d1,nufft3d2,nufft3d3
+from finufft._interfaces import nufft1d1, nufft1d2, nufft1d3
+from finufft._interfaces import nufft2d1, nufft2d2, nufft2d3
+from finufft._interfaces import nufft3d1, nufft3d2, nufft3d3
+from finufft._interfaces import nufft4d1, nufft4d2, nufft4d3
+from finufft._interfaces import nufft5d1, nufft5d2, nufft5d3
