@@ -1304,7 +1304,7 @@ void mexStub8(int nlhs, mxArray* plhs[],
     finufft_plan*  in6_ =0; /* plan       */
     nufft_opts*  in7_ =0; /* o          */
     int         out0_;   /* ier        */
-    mwSize      dim8_;   /* 3          */
+    mwSize      dim8_;   /* 5          */
 
     dim8_ = (mwSize) mxWrapGetScalar(prhs[8], &mw_err_txt_);
 
@@ -1389,7 +1389,7 @@ void mexStub9(int nlhs, mxArray* plhs[],
     finufftf_plan*  in6_ =0; /* plan       */
     nufft_opts*  in7_ =0; /* o          */
     int         out0_;   /* ier        */
-    mwSize      dim8_;   /* 3          */
+    mwSize      dim8_;   /* 5          */
 
     dim8_ = (mwSize) mxWrapGetScalar(prhs[8], &mw_err_txt_);
 
@@ -1480,9 +1480,9 @@ mw_err_label:
 }
 
 /* ---- finufft.mw: 225 ----
- * int ier = finufft_setpts(finufft_plan plan, int64_t nj, double[] xj, double[] yj, double[] zj, int64_t nk, double[] s, double[] t, double[] u);
+ * int ier = finufft_setpts(finufft_plan plan, int64_t nj, double[] xj, double[] yj, double[] zj, double[] pj, double[] qj, int64_t nk, double[] s, double[] t, double[] u, double[] v, double[] w);
  */
-static const char* stubids11_ = "o int = finufft_setpts(i finufft_plan, i int64_t, i double[], i double[], i double[], i int64_t, i double[], i double[], i double[])";
+static const char* stubids11_ = "o int = finufft_setpts(i finufft_plan, i int64_t, i double[], i double[], i double[], i double[], i double[], i int64_t, i double[], i double[], i double[], i double[], i double[])";
 
 void mexStub11(int nlhs, mxArray* plhs[],
               int nrhs, const mxArray* prhs[])
@@ -1493,10 +1493,14 @@ void mexStub11(int nlhs, mxArray* plhs[],
     double*     in2_ =0; /* xj         */
     double*     in3_ =0; /* yj         */
     double*     in4_ =0; /* zj         */
-    int64_t     in5_;    /* nk         */
-    double*     in6_ =0; /* s          */
-    double*     in7_ =0; /* t          */
-    double*     in8_ =0; /* u          */
+    double*     in5_ =0; /* pj         */
+    double*     in6_ =0; /* qj         */
+    int64_t     in7_;    /* nk         */
+    double*     in8_ =0; /* s          */
+    double*     in9_ =0; /* t          */
+    double*     in10_ =0; /* u          */
+    double*     in11_ =0; /* v          */
+    double*     in12_ =0; /* w          */
     int         out0_;   /* ier        */
 
     in0_ = (finufft_plan*) mxWrapGetP(prhs[0], "finufft_plan:%p", &mw_err_txt_);
@@ -1541,12 +1545,17 @@ void mexStub11(int nlhs, mxArray* plhs[],
 #endif
     } else
         in4_ = NULL;
-    if( mxGetClassID(prhs[5]) != mxDOUBLE_CLASS )
-        mw_err_txt_ = "Invalid scalar argument, mxDOUBLE_CLASS expected";
-    if (mw_err_txt_) goto mw_err_label;
-    in5_ = (int64_t) mxWrapGetScalar(prhs[5], &mw_err_txt_);
-    if (mw_err_txt_)
-        goto mw_err_label;
+    if (mxGetM(prhs[5])*mxGetN(prhs[5]) != 0) {
+        if( mxGetClassID(prhs[5]) != mxDOUBLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxDOUBLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in5_ = mxGetDoubles(prhs[5]);
+#else
+        in5_ = mxGetPr(prhs[5]);
+#endif
+    } else
+        in5_ = NULL;
     if (mxGetM(prhs[6])*mxGetN(prhs[6]) != 0) {
         if( mxGetClassID(prhs[6]) != mxDOUBLE_CLASS )
             mw_err_txt_ = "Invalid array argument, mxDOUBLE_CLASS expected";
@@ -1558,17 +1567,12 @@ void mexStub11(int nlhs, mxArray* plhs[],
 #endif
     } else
         in6_ = NULL;
-    if (mxGetM(prhs[7])*mxGetN(prhs[7]) != 0) {
-        if( mxGetClassID(prhs[7]) != mxDOUBLE_CLASS )
-            mw_err_txt_ = "Invalid array argument, mxDOUBLE_CLASS expected";
-        if (mw_err_txt_) goto mw_err_label;
-#if MX_HAS_INTERLEAVED_COMPLEX
-        in7_ = mxGetDoubles(prhs[7]);
-#else
-        in7_ = mxGetPr(prhs[7]);
-#endif
-    } else
-        in7_ = NULL;
+    if( mxGetClassID(prhs[7]) != mxDOUBLE_CLASS )
+        mw_err_txt_ = "Invalid scalar argument, mxDOUBLE_CLASS expected";
+    if (mw_err_txt_) goto mw_err_label;
+    in7_ = (int64_t) mxWrapGetScalar(prhs[7], &mw_err_txt_);
+    if (mw_err_txt_)
+        goto mw_err_label;
     if (mxGetM(prhs[8])*mxGetN(prhs[8]) != 0) {
         if( mxGetClassID(prhs[8]) != mxDOUBLE_CLASS )
             mw_err_txt_ = "Invalid array argument, mxDOUBLE_CLASS expected";
@@ -1580,13 +1584,57 @@ void mexStub11(int nlhs, mxArray* plhs[],
 #endif
     } else
         in8_ = NULL;
+    if (mxGetM(prhs[9])*mxGetN(prhs[9]) != 0) {
+        if( mxGetClassID(prhs[9]) != mxDOUBLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxDOUBLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in9_ = mxGetDoubles(prhs[9]);
+#else
+        in9_ = mxGetPr(prhs[9]);
+#endif
+    } else
+        in9_ = NULL;
+    if (mxGetM(prhs[10])*mxGetN(prhs[10]) != 0) {
+        if( mxGetClassID(prhs[10]) != mxDOUBLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxDOUBLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in10_ = mxGetDoubles(prhs[10]);
+#else
+        in10_ = mxGetPr(prhs[10]);
+#endif
+    } else
+        in10_ = NULL;
+    if (mxGetM(prhs[11])*mxGetN(prhs[11]) != 0) {
+        if( mxGetClassID(prhs[11]) != mxDOUBLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxDOUBLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in11_ = mxGetDoubles(prhs[11]);
+#else
+        in11_ = mxGetPr(prhs[11]);
+#endif
+    } else
+        in11_ = NULL;
+    if (mxGetM(prhs[12])*mxGetN(prhs[12]) != 0) {
+        if( mxGetClassID(prhs[12]) != mxDOUBLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxDOUBLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in12_ = mxGetDoubles(prhs[12]);
+#else
+        in12_ = mxGetPr(prhs[12]);
+#endif
+    } else
+        in12_ = NULL;
     if (!in0_) {
         mw_err_txt_ = "Argument plan cannot be null";
         goto mw_err_label;
     }
     if (mexprofrecord_)
         mexprofrecord_[11]++;
-    out0_ = finufft_setpts(*in0_, in1_, in2_, in3_, in4_, in5_, in6_, in7_, in8_);
+    out0_ = finufft_setpts(*in0_, in1_, in2_, in3_, in4_, in5_, in6_, in7_, in8_, in9_, in10_, in11_, in12_);
 #if MX_HAS_INTERLEAVED_COMPLEX
     plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
     *mxGetDoubles(plhs[0]) = out0_;
@@ -1601,9 +1649,9 @@ mw_err_label:
 }
 
 /* ---- finufft.mw: 227 ----
- * int ier = finufftf_setpts(finufftf_plan plan, int64_t nj, float[] xj, float[] yj, float[] zj, int64_t nk, float[] s, float[] t, float[] u);
+ * int ier = finufftf_setpts(finufftf_plan plan, int64_t nj, float[] xj, float[] yj, float[] zj, double[] pj, double[] qj, int64_t nk, float[] s, float[] t, float[] u);
  */
-static const char* stubids12_ = "o int = finufftf_setpts(i finufftf_plan, i int64_t, i float[], i float[], i float[], i int64_t, i float[], i float[], i float[])";
+static const char* stubids12_ = "o int = finufftf_setpts(i finufftf_plan, i int64_t, i float[], i float[], i float[], i float[], i float[], i int64_t, i float[], i float[], i float[], i float[], i float[])";
 
 void mexStub12(int nlhs, mxArray* plhs[],
               int nrhs, const mxArray* prhs[])
@@ -1614,10 +1662,14 @@ void mexStub12(int nlhs, mxArray* plhs[],
     float*      in2_ =0; /* xj         */
     float*      in3_ =0; /* yj         */
     float*      in4_ =0; /* zj         */
-    int64_t     in5_;    /* nk         */
-    float*      in6_ =0; /* s          */
-    float*      in7_ =0; /* t          */
-    float*      in8_ =0; /* u          */
+    float*      in5_ =0; /* pj         */
+    float*      in6_ =0; /* qj         */
+    int64_t     in7_;    /* nk         */
+    float*      in8_ =0; /* s          */
+    float*      in9_ =0; /* t          */
+    float*      in10_ =0; /* u          */
+    float*      in11_ =0; /* v          */
+    float*      in12_ =0; /* w          */
     int         out0_;   /* ier        */
 
     in0_ = (finufftf_plan*) mxWrapGetP(prhs[0], "finufftf_plan:%p", &mw_err_txt_);
@@ -1662,12 +1714,17 @@ void mexStub12(int nlhs, mxArray* plhs[],
 #endif
     } else
         in4_ = NULL;
-    if( mxGetClassID(prhs[5]) != mxDOUBLE_CLASS )
-        mw_err_txt_ = "Invalid scalar argument, mxDOUBLE_CLASS expected";
-    if (mw_err_txt_) goto mw_err_label;
-    in5_ = (int64_t) mxWrapGetScalar(prhs[5], &mw_err_txt_);
-    if (mw_err_txt_)
-        goto mw_err_label;
+    if (mxGetM(prhs[5])*mxGetN(prhs[5]) != 0) {
+        if( mxGetClassID(prhs[5]) != mxSINGLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxSINGLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in5_ = mxGetSingles(prhs[5]);
+#else
+        in5_ = (float*) mxGetData(prhs[5]);
+#endif
+    } else
+        in5_ = NULL;
     if (mxGetM(prhs[6])*mxGetN(prhs[6]) != 0) {
         if( mxGetClassID(prhs[6]) != mxSINGLE_CLASS )
             mw_err_txt_ = "Invalid array argument, mxSINGLE_CLASS expected";
@@ -1679,17 +1736,12 @@ void mexStub12(int nlhs, mxArray* plhs[],
 #endif
     } else
         in6_ = NULL;
-    if (mxGetM(prhs[7])*mxGetN(prhs[7]) != 0) {
-        if( mxGetClassID(prhs[7]) != mxSINGLE_CLASS )
-            mw_err_txt_ = "Invalid array argument, mxSINGLE_CLASS expected";
-        if (mw_err_txt_) goto mw_err_label;
-#if MX_HAS_INTERLEAVED_COMPLEX
-        in7_ = mxGetSingles(prhs[7]);
-#else
-        in7_ = (float*) mxGetData(prhs[7]);
-#endif
-    } else
-        in7_ = NULL;
+    if( mxGetClassID(prhs[7]) != mxDOUBLE_CLASS )
+        mw_err_txt_ = "Invalid scalar argument, mxDOUBLE_CLASS expected";
+    if (mw_err_txt_) goto mw_err_label;
+    in7_ = (int64_t) mxWrapGetScalar(prhs[7], &mw_err_txt_);
+    if (mw_err_txt_)
+        goto mw_err_label;
     if (mxGetM(prhs[8])*mxGetN(prhs[8]) != 0) {
         if( mxGetClassID(prhs[8]) != mxSINGLE_CLASS )
             mw_err_txt_ = "Invalid array argument, mxSINGLE_CLASS expected";
@@ -1701,13 +1753,57 @@ void mexStub12(int nlhs, mxArray* plhs[],
 #endif
     } else
         in8_ = NULL;
+    if (mxGetM(prhs[9])*mxGetN(prhs[9]) != 0) {
+        if( mxGetClassID(prhs[9]) != mxSINGLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxSINGLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in9_ = mxGetSingles(prhs[9]);
+#else
+        in9_ = (float*) mxGetData(prhs[9]);
+#endif
+    } else
+        in9_ = NULL;
+    if (mxGetM(prhs[10])*mxGetN(prhs[10]) != 0) {
+        if( mxGetClassID(prhs[10]) != mxSINGLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxSINGLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in10_ = mxGetSingles(prhs[10]);
+#else
+        in10_ = (float*) mxGetData(prhs[10]);
+#endif
+    } else
+        in10_ = NULL;
+    if (mxGetM(prhs[11])*mxGetN(prhs[11]) != 0) {
+        if( mxGetClassID(prhs[11]) != mxSINGLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxSINGLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in11_ = mxGetSingles(prhs[11]);
+#else
+        in11_ = (float*) mxGetData(prhs[11]);
+#endif
+    } else
+        in11_ = NULL;
+    if (mxGetM(prhs[12])*mxGetN(prhs[12]) != 0) {
+        if( mxGetClassID(prhs[12]) != mxSINGLE_CLASS )
+            mw_err_txt_ = "Invalid array argument, mxSINGLE_CLASS expected";
+        if (mw_err_txt_) goto mw_err_label;
+#if MX_HAS_INTERLEAVED_COMPLEX
+        in12_ = mxGetSingles(prhs[12]);
+#else
+        in12_ = (float*) mxGetData(prhs[12]);
+#endif
+    } else
+        in12_ = NULL;
     if (!in0_) {
         mw_err_txt_ = "Argument plan cannot be null";
         goto mw_err_label;
     }
     if (mexprofrecord_)
         mexprofrecord_[12]++;
-    out0_ = finufftf_setpts(*in0_, in1_, in2_, in3_, in4_, in5_, in6_, in7_, in8_);
+    out0_ = finufftf_setpts(*in0_, in1_, in2_, in3_, in4_, in5_, in6_, in7_, in8_, in9_, in10_, in11_, in12_);
 #if MX_HAS_INTERLEAVED_COMPLEX
     plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
     *mxGetDoubles(plhs[0]) = out0_;

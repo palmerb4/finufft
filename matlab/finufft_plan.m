@@ -37,8 +37,9 @@
 % Inputs: 
 %     type            transform type: 1, 2, or 3
 %     n_modes_or_dim  if type is 1 or 2, the number of Fourier modes in each
-%                     dimension: [ms] in 1D, [ms mt] in 2D, or [ms mt mu] in 3D.
-%                     Its length sets the dimension, which must be 1, 2 or 3.
+%                     dimension: [ms] in 1D, [ms mt] in 2D, [ms mt mu] in 3D,
+%                     [ms mt mu mv] in 4D, [ms mt mu mv mw] in 5D. Its length 
+%                     sets the dimension, which must be 1, 2, 3, 4, or 5.
 %                     If type is 3, in contrast, its *value* fixes the dimension
 %     isign if >=0, uses + sign in exponential, otherwise - sign.
 %     eps   relative precision requested (generally between 1e-15 and 1e-1)
@@ -75,13 +76,17 @@
 % plan.setpts(xj)
 % plan.setpts(xj, yj)
 % plan.setpts(xj, yj, zj)
-% plan.setpts(xj, [], [], s)
-% plan.setpts(xj, yj, [], s, t)
-% plan.setpts(xj, yj, zj, s, t, u)
+% plan.setpts(xj, yj, zj, pj)
+% plan.setpts(xj, yj, zj, pj, qj)
+% plan.setpts(xj, [], [], [], [], s)
+% plan.setpts(xj, yj, [], [], [], s, t)
+% plan.setpts(xj, yj, zj, [], [], s, t, u)
+% plan.setpts(xj, yj, zj, [], [], s, t, u, v)
+% plan.setpts(xj, yj, zj, [], [], s, t, u, v, w)
 %
 %  When plan is a finufft_plan MATLAB object, brings in nonuniform point
-%  coordinates (xj,yj,zj), and additionally in the type 3 case, nonuniform
-%  frequency target points (s,t,u). Empty arrays may be passed in the case of
+%  coordinates (xj,yj,zj,pj,qj), and additionally in the type 3 case, nonuniform
+%  frequency target points (s,t,u,v,w). Empty arrays may be passed in the case of
 %  unused dimensions. For all types, sorting is done to internally store a
 %  reindexing of points, and for type 3 the spreading and FFTs are planned.
 %  The nonuniform points may be used for multiple transforms.
@@ -90,9 +95,13 @@
 %     xj     vector of x-coords of all nonuniform points
 %     yj     empty (if dim<2), or vector of y-coords of all nonuniform points
 %     zj     empty (if dim<3), or vector of z-coords of all nonuniform points
+%     pj     empty (if dim<4), or vector of p-coords of all nonuniform points
+%     qj     empty (if dim<5), or vector of q-coords of all nonuniform points
 %     s      vector of x-coords of all nonuniform frequency targets
 %     t      empty (if dim<2), or vector of y-coords of all frequency targets
 %     u      empty (if dim<3), or vector of z-coords of all frequency targets
+%     v      empty (if dim<4), or vector of p-coords of all frequency targets
+%     w      empty (if dim<5), or vector of q-coords of all frequency targets
 % Input/Outputs:
 %     plan   finufft_plan object
 %
@@ -101,7 +110,7 @@
 %    lie in the interval [-3pi,3pi). For type 1 they are "sources", but for
 %    type 2, "targets". In contrast, for type 3 there are no restrictions other
 %    than the resulting size of the internal fine grids.
-%  * s (and t and u) are only relevant for type 3, and may be omitted otherwise
+%  * s, t, u, v, and w are only relevant for type 3, and may be omitted otherwise
 %  * The matlab vectors xj,... and s,... should not be changed before calling
 %    future execute calls, because the plan stores only pointers to the
 %    arrays (they are not duplicated internally).
@@ -125,18 +134,21 @@
 %              vector, matrix, or array of appropriate size. For type 1 and 3,
 %              this is either a length-M vector (where M is the length of xj),
 %              or an (M,ntrans) matrix when ntrans>1. For type 2, in 1D this is
-%              length-ms, in 2D size (ms,mt), or in 3D size (ms,mt,mu), or
+%              length-ms, in 2D size (ms,mt), in 3D size (ms,mt,mu), 
+%              in 4D size (ms,mt,mu,mv), in 5D size (ms,mt,mu,mv,mw), or
 %              each of these with an extra last dimension ntrans if ntrans>1.
 % Outputs:
 %     result   vector of output strengths at targets (types 2 or 3), or array
 %              of Fourier coefficients (type 1), or, if ntrans>1, a stack of
 %              such vectors or arrays, of appropriate size.
 %              Specifically, if ntrans=1, for type 1, in 1D
-%              this is a length-ms column vector, in 2D a matrix of size
-%              (ms,mt), or in 3D an array of size (ms,mt,mu); for types 2 and 3
-%              it is a column vector of length M (the length of xj in type 2),
-%              or nk (the length of s in type 3). If ntrans>1 its is a stack
-%              of such objects, ie, it has an extra last dimension ntrans.
+%              this is a length-ms column vector, in 2D a matrix of size 
+%              (ms,mt), in 3D an array of size (ms,mt,mu), in 4D an array of 
+%              size (ms,mt,mu,mv), in 5D an array of size (ms,mt,mu,mv,mw); 
+%              for types 2 and 3 it is a column vector of length M 
+%              (the length of xj in type 2), or nk (the length of s in type 3). 
+%              If ntrans>1 its is a stack of such objects, ie, it has an 
+%              extra last dimension ntrans.
 %
 % Notes:
 %  * The precision (double/single) of all inputs must match that chosen at the
@@ -158,13 +170,15 @@ classdef finufft_plan < handle
     % track other properties we'd rather not have to query the C++ plan for...
     type
     dim
-    n_modes         % 3-element array, 1's in the unused dims
+    n_modes         % 5-element array, 1's in the unused dims
     n_trans
     nj              % number of NU pts (type 1,2), or input NU pts (type 3)
     nk              % number of output NU pts (type 3)
     xj
     yj
     zj
+    pj
+    qj
   end
 
   methods
@@ -182,14 +196,14 @@ classdef finufft_plan < handle
         end
       end
       
-      n_modes = ones(3,1);         % is dummy for type 3
+      n_modes = ones(5,1);         % is dummy for type 3
       if type==3
         if length(n_modes_or_dim)~=1
           error('FINUFFT:badT3dim', 'FINUFFT type 3 plan n_modes_or_dim must be one number, the dimension');
         end
         dim = n_modes_or_dim;      % interpret as dim
       else
-        dim = length(n_modes_or_dim);    % allows any ms,mt,mu to be 1 (weird..)
+        dim = length(n_modes_or_dim);    % allows any ms,mt,mu,mv,mw to be 1 (weird..)
         n_modes(1:dim) = n_modes_or_dim;   % unused dims left as 1
       end
       % (checks of type, dim will occur in the C++ library, so omit them above)
@@ -200,16 +214,16 @@ finufft(mex_id_);
 [o] = finufft(mex_id_);
       if strcmp(plan.floatprec,'double')
         mex_id_ = 'o finufft_plan* = new()';
-[p] = finufft(mex_id_);
+[mwptr] = finufft(mex_id_);
         mex_id_ = 'finufft_default_opts(i nufft_opts*)';
 finufft(mex_id_, o);
       else
         mex_id_ = 'o finufftf_plan* = new()';
-[p] = finufft(mex_id_);
+[mwptr] = finufft(mex_id_);
         mex_id_ = 'finufftf_default_opts(i nufft_opts*)';
 finufft(mex_id_, o);
       end
-      plan.mwptr = p;   % crucial: save the opaque ptr (p.12 of MWrap manual)
+      plan.mwptr = mwptr;   % crucial: save the opaque ptr (mwptr.12 of MWrap manual)
       plan.dim = dim;   % save other stuff to avoid having to access via C++...
       plan.type = type;
       plan.n_modes = n_modes;
@@ -223,18 +237,18 @@ finufft(mex_id_, opts, o);
       if strcmp(plan.floatprec,'double')
         tol = double(tol);   % scalar type must match for mwrap>=0.33.11
         mex_id_ = 'o int = finufft_makeplan(i int, i int, i int64_t[x], i int, i int, i double, i finufft_plan*, i nufft_opts*)';
-[ier] = finufft(mex_id_, type, dim, n_modes, iflag, n_trans, tol, plan, o, 3);
+[ier] = finufft(mex_id_, type, dim, n_modes, iflag, n_trans, tol, plan, o, 5);
       else
         tol = single(tol);   % ditto
         mex_id_ = 'o int = finufftf_makeplan(i int, i int, i int64_t[x], i int, i int, i float, i finufftf_plan*, i nufft_opts*)';
-[ier] = finufft(mex_id_, type, dim, n_modes, iflag, n_trans, tol, plan, o, 3);
+[ier] = finufft(mex_id_, type, dim, n_modes, iflag, n_trans, tol, plan, o, 5);
       end
       mex_id_ = 'delete(i nufft_opts*)';
 finufft(mex_id_, o);
       errhandler(ier);             % convert C++ codes to matlab-style errors
     end
 
-    function setpts(plan, xj, yj, zj, s, t, u)
+    function setpts(plan, xj, yj, zj, pj, qj, s, t, u, v, w)
     % SETPTS   process nonuniform points for general FINUFFT transform(s).
 
       % fill missing inputs with empties of correct type
@@ -245,26 +259,32 @@ finufft(mex_id_, o);
       end
       if nargin<3, yj=emp; end
       if nargin<4, zj=emp; end
-      if nargin<5, s=emp; end
-      if nargin<6, t=emp; end
-      if nargin<7, u=emp; end
+      if nargin<5, pj=emp; end
+      if nargin<6, qj=emp; end
+      if nargin<7, s=emp; end
+      if nargin<8, t=emp; end
+      if nargin<9, u=emp; end
+      if nargin<10, v=emp; end
+      if nargin<11, w=emp; end
       % get number(s) of NU pts (also validates the NU pt array sizes)...
-      [nj, nk] = valid_setpts(plan.type, plan.dim, xj, yj, zj, s, t, u);
+      [nj, nk] = valid_setpts(plan.type, plan.dim, xj, yj, zj, pj, qj, s, t, u, v, w);
       plan.nj = nj;            % save to avoid having to query the C++ plan
       plan.nk = nk;            % "
-      % Force MATLAB to preserve the memory of xj/yj/zj by storing them as class
-      % properties (see issue #185). Ideally, we would pass plan.xj/yj/zj to the
+      % Force MATLAB to preserve the memory of xj/yj/zj/pj/qj by storing them as class
+      % properties (see issue #185). Ideally, we would pass plan.xj/yj/zj/pj/qj to the
       % MWrap call below, but MWrap fails to parse the "." syntax. However,
-      % simply storing xj/yj/zj ensures that the memory will be preserved.
+      % simply storing xj/yj/zj/pj/qj ensures that the memory will be preserved.
       plan.xj = xj;
       plan.yj = yj;
       plan.zj = zj;
+      plan.pj = pj;
+      plan.qj = qj;
       if strcmp(plan.floatprec,'double')
-        mex_id_ = 'o int = finufft_setpts(i finufft_plan, i int64_t, i double[], i double[], i double[], i int64_t, i double[], i double[], i double[])';
-[ier] = finufft(mex_id_, plan, nj, xj, yj, zj, nk, s, t, u);
+        mex_id_ = 'o int = finufft_setpts(i finufft_plan, i int64_t, i double[], i double[], i double[], i double[], i double[], i int64_t, i double[], i double[], i double[], i double[], i double[])';
+[ier] = finufft(mex_id_, plan, nj, xj, yj, zj, pj, qj, nk, s, t, u, v, w);
       else
-        mex_id_ = 'o int = finufftf_setpts(i finufftf_plan, i int64_t, i float[], i float[], i float[], i int64_t, i float[], i float[], i float[])';
-[ier] = finufft(mex_id_, plan, nj, xj, yj, zj, nk, s, t, u);
+        mex_id_ = 'o int = finufftf_setpts(i finufftf_plan, i int64_t, i float[], i float[], i float[], i float[], i float[], i int64_t, i float[], i float[], i float[], i float[], i float[])';
+[ier] = finufft(mex_id_, plan, nj, xj, yj, zj, pj, qj, nk, s, t, u, v, w);
       end
       errhandler(ier);
     end
@@ -274,12 +294,12 @@ finufft(mex_id_, o);
 
       % get shape info from the matlab-side plan (since can't pass "dot"
       % variables like a.b as mwrap sizes, too)...
-      ms = plan.n_modes(1); mt = plan.n_modes(2); mu = plan.n_modes(3);
+      ms = plan.n_modes(1); mt = plan.n_modes(2); mu = plan.n_modes(3); mv = plan.n_modes(4); mw = plan.n_modes(5);
       nj = plan.nj; nk = plan.nk; n_trans = plan.n_trans;
 
       % check data input length...
       if plan.type==1 || plan.type==2
-        ncoeffs = ms*mt*mu*n_trans;    % total # Fourier coeffs
+        ncoeffs = ms*mt*mu*mv*mw*n_trans;    % total # Fourier coeffs
       end
       if plan.type==2
         ninputs = ncoeffs;
@@ -297,8 +317,8 @@ finufft(mex_id_, o);
           mex_id_ = 'o int = finufftf_execute(i finufftf_plan, i fcomplex[], o fcomplex[x])';
 [ier, result] = finufft(mex_id_, plan, data_in, ncoeffs);
         end
-        % make modes output correct shape; when d<3 squeeze removes unused dims...
-        result = squeeze(reshape(result, [ms mt mu n_trans]));
+        % make modes output correct shape; when d<5 squeeze removes unused dims...
+        result = squeeze(reshape(result, [ms mt mu mv mw n_trans]));
       elseif plan.type == 2
         if strcmp(plan.floatprec,'double')
           mex_id_ = 'o int = finufft_execute(i finufft_plan, o dcomplex[xx], i dcomplex[])';

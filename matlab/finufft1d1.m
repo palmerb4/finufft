@@ -48,9 +48,9 @@
 function f = finufft1d1(x,c,isign,eps,ms,o)
 
 if nargin<6, o.dummy=1; end            % make a dummy options struct
-valid_setpts(1,1,x,[],[]);
+valid_setpts(1,1,x,[],[],[],[]);
 o.floatprec=class(x);                  % should be 'double' or 'single'
 n_transf = valid_ntr(x,c);
-p = finufft_plan(1,ms,isign,n_transf,eps,o);
-p.setpts(x,[],[]);
-f = p.execute(c);
+plan = finufft_plan(1,ms,isign,n_transf,eps,o);
+plan.setpts(x,[],[],[],[]);
+f = plan.execute(c);

@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   finufft_plan plan;
   int ier = finufft_makeplan(type, dim, Ns, +1, ntrans, tol, &plan, NULL);
   // step 2: send in M nonuniform points (just x, y in this case)...
-  finufft_setpts(plan, M, &x[0], &y[0], NULL, 0, NULL, NULL, NULL);
+  finufft_setpts(plan, M, &x[0], &y[0], NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
   // step 3: do the planned transform to the c strength data, output to F...
   finufft_execute(plan, &c[0], &F[0]);
   // ... you could now send in new points, and/or do transforms with new c data

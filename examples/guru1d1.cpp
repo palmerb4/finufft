@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   for (int j = 0; j < M; ++j)
     x[j] = M_PI * (2 * ((double)rand() / RAND_MAX) - 1); // uniform random in [-pi,pi)
   // note FINUFFT doesn't use std::vector types, so we need to make a pointer...
-  finufft_setpts(plan, M, &x[0], NULL, NULL, 0, NULL, NULL, NULL);
+  finufft_setpts(plan, M, &x[0], NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL);
 
   // generate some complex strengths
   vector<complex<double>> c(M);

@@ -130,7 +130,7 @@ classdef finufft_plan < handle
     % track other properties we'd rather not have to query the C++ plan for...
     type
     dim
-    n_modes         % 3-element array, 1's in the unused dims
+    n_modes         % 5-element array, 1's in the unused dims
     n_trans
     nj              % number of NU pts (type 1,2), or input NU pts (type 3)
     nk              % number of output NU pts (type 3)
@@ -154,14 +154,14 @@ classdef finufft_plan < handle
         end
       end
       
-      n_modes = ones(3,1);         % is dummy for type 3
+      n_modes = ones(5,1);         % is dummy for type 3
       if type==3
         if length(n_modes_or_dim)~=1
           error('FINUFFT:badT3dim', 'FINUFFT type 3 plan n_modes_or_dim must be one number, the dimension');
         end
         dim = n_modes_or_dim;      % interpret as dim
       else
-        dim = length(n_modes_or_dim);    % allows any ms,mt,mu to be 1 (weird..)
+        dim = length(n_modes_or_dim);    % allows any ms,mt,mu,mv,mw to be 1 (weird..)
         n_modes(1:dim) = n_modes_or_dim;   % unused dims left as 1
       end
       % (checks of type, dim will occur in the C++ library, so omit them above)
@@ -196,7 +196,7 @@ classdef finufft_plan < handle
       errhandler(ier);             % convert C++ codes to matlab-style errors
     end
 
-    function setpts(plan, xj, yj, zj, s, t, u)
+    function setpts(plan, xj, yj, zj, pj, qj, s, t, u, v, w)
     % SETPTS   process nonuniform points for general FINUFFT transform(s).
 
       % fill missing inputs with empties of correct type
@@ -207,24 +207,30 @@ classdef finufft_plan < handle
       end
       if nargin<3, yj=emp; end
       if nargin<4, zj=emp; end
-      if nargin<5, s=emp; end
-      if nargin<6, t=emp; end
-      if nargin<7, u=emp; end
+      if nargin<5, pj=emp; end
+      if nargin<6, qj=emp; end
+      if nargin<7, s=emp; end
+      if nargin<8, t=emp; end
+      if nargin<9, u=emp; end
+      if nargin<10, v=emp; end
+      if nargin<11, w=emp; end
       % get number(s) of NU pts (also validates the NU pt array sizes)...
-      [nj, nk] = valid_setpts(plan.type, plan.dim, xj, yj, zj, s, t, u);
+      [nj, nk] = valid_setpts(plan.type, plan.dim, xj, yj, zj, pj, qj, s, t, u, v, w);
       plan.nj = nj;            % save to avoid having to query the C++ plan
       plan.nk = nk;            % "
-      % Force MATLAB to preserve the memory of xj/yj/zj by storing them as class
-      % properties (see issue #185). Ideally, we would pass plan.xj/yj/zj to the
+      % Force MATLAB to preserve the memory of xj/yj/zj/pj/qj by storing them as class
+      % properties (see issue #185). Ideally, we would pass plan.xj/yj/zj/pj/qj to the
       % MWrap call below, but MWrap fails to parse the "." syntax. However,
-      % simply storing xj/yj/zj ensures that the memory will be preserved.
+      % simply storing xj/yj/zj/pj/qj ensures that the memory will be preserved.
       plan.xj = xj;
       plan.yj = yj;
       plan.zj = zj;
+      plan.pj = pj;
+      plan.qj = qj;
       if strcmp(plan.floatprec,'double')
-        # int ier = finufft_setpts(finufft_plan plan, int64_t nj, double[] xj, double[] yj, double[] zj, int64_t nk, double[] s, double[] t, double[] u);
+        # int ier = finufft_setpts(finufft_plan plan, int64_t nj, double[] xj, double[] yj, double[] zj, double[] pj, double[] qj, int64_t nk, double[] s, double[] t, double[] u, double[] v, double[] w);
       else
-        # int ier = finufftf_setpts(finufftf_plan plan, int64_t nj, float[] xj, float[] yj, float[] zj, int64_t nk, float[] s, float[] t, float[] u);
+        # int ier = finufftf_setpts(finufftf_plan plan, int64_t nj, float[] xj, float[] yj, float[] zj, float[] pj, float[] qj, int64_t nk, float[] s, float[] t, float[] u, float[] v, float[] w);
       end
       errhandler(ier);
     end
@@ -234,12 +240,12 @@ classdef finufft_plan < handle
 
       % get shape info from the matlab-side plan (since can't pass "dot"
       % variables like a.b as mwrap sizes, too)...
-      ms = plan.n_modes(1); mt = plan.n_modes(2); mu = plan.n_modes(3);
+      ms = plan.n_modes(1); mt = plan.n_modes(2); mu = plan.n_modes(3); mv = plan.n_modes(4); mw = plan.n_modes(5);
       nj = plan.nj; nk = plan.nk; n_trans = plan.n_trans;
 
       % check data input length...
       if plan.type==1 || plan.type==2
-        ncoeffs = ms*mt*mu*n_trans;    % total # Fourier coeffs
+        ncoeffs = ms*mt*mu*mv*mw*n_trans;    % total # Fourier coeffs
       end
       if plan.type==2
         ninputs = ncoeffs;
@@ -255,8 +261,8 @@ classdef finufft_plan < handle
         else
           # int ier = finufftf_execute(finufftf_plan plan, fcomplex[] data_in, output fcomplex[ncoeffs] result);
         end
-        % make modes output correct shape; when d<3 squeeze removes unused dims...
-        result = squeeze(reshape(result, [ms mt mu n_trans]));
+        % make modes output correct shape; when d<5 squeeze removes unused dims...
+        result = squeeze(reshape(result, [ms mt mu mv mw n_trans]));
       elseif plan.type == 2
         if strcmp(plan.floatprec,'double')
           # int ier = finufft_execute(finufft_plan plan, output dcomplex[nj, n_trans] result, dcomplex[] data_in);

@@ -112,7 +112,7 @@ c
 c
 c
 ************************************************************************
-      subroutine dirft3d2f(nj,xj,yj,zj,cj, iflag, ms,mt,mu,fk)
+      subroutine dirft3d2f(nj,xj,yj,zj,cj,iflag,ms,mt,mu,fk)
       implicit none
       integer nj, iflag, ms, mt, mu
       real*4 xj(nj), yj(nj), zj(nj)

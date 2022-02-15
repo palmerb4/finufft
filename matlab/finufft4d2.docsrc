@@ -1,0 +1,28 @@
+% FINUFFT4D2   4D complex nonuniform FFT of type 2 (uniform to nonuniform).
+%
+% c = finufft4d2(x,y,z,p,isign,eps,f)
+% c = finufft4d2(x,y,z,p,isign,eps,f,opts)
+%
+% This computes, to relative precision eps, via a fast algorithm:
+%
+%    c[j] =   SUM   f[k1,k2,k3,k4] exp(+/-i (k1 x[j]+k2 y[j]+k3 z[j]+k4 p[j]))
+%         k1,k2,k3,k4
+%                            for j = 1,..,nj
+%     where sum is over -ms/2 <= k1 <= (ms-1)/2, -mt/2 <= k2 <= (mt-1)/2,
+%                       -mu/2 <= k3 <= (mu-1)/2, -mv/2 <= k4 <= (mv-1)/2.
+%
+%  Inputs:
+%     x,y,z,p coordinates of nonuniform targets on the hypercube [-3pi,3pi)^4,
+%           each a vector of length nj
+%     f     complex Fourier coefficient array, whose size sets (ms,mt,mu,mv).
+%           (Mode ordering given by opts.modeord, in each dimension.)
+%           If a 5D array, 5th dimension sets ntrans, and each of ntrans
+%           4D arrays is transformed with the same nonuniform targets.
+ISIGNEPS
+OPTS
+OPTS12
+%  Outputs:
+%     c     complex column vector of nj answers at targets, or,
+%           if ntrans>1, matrix of size (nj,ntrans).
+%
+NOTES

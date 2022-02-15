@@ -1,21 +1,28 @@
-% FINUFFT1D3   1D complex nonuniform FFT of type 3 (nonuniform to nonuniform).
+% FINUFFT5D2   5D complex nonuniform FFT of type 2 (uniform to nonuniform).
 %
-% f = finufft1d3(x,c,isign,eps,s)
-% f = finufft1d3(x,c,isign,eps,s,opts)
+% c = finufft5d2(x,y,z,p,q,isign,eps,f)
+% c = finufft5d2(x,y,z,p,q,isign,eps,f,opts)
 %
 % This computes, to relative precision eps, via a fast algorithm:
 %
-%              nj
-%     f[k]  =  SUM   c[j] exp(+-i s[k] x[j]),      for k = 1, ..., nk
-%              j=1
-%   Inputs:
-%     x     locations of nonuniform sources on R (real line), length-nj vector.
-%     c     length-nj complex vector of source strengths. If numel(c)>nj,
-%           expects a stack of vectors (eg, a nj*ntrans matrix) each of which is
-%           transformed with the same source and target locations.
+%    c[j] =   SUM   f[k1,k2,k3,k4,k5] exp(+/-i (k1 x[j] + k2 y[j]
+%                                             + k3 z[j] + k4 p[j]
+%                                             + k5 q[j]))
+%       k1,k2,k3,k4,k5
+%                            for j = 1,..,nj
+%     where sum is over -ms/2 <= k1 <= (ms-1)/2, -mt/2 <= k2 <= (mt-1)/2,
+%                       -mu/2 <= k3 <= (mu-1)/2, -mv/2 <= k4 <= (mv-1)/2,
+%                       -mw/2 <= k5 <= (mw-1)/2
+%
+%  Inputs:
+%     x,y,z,p,q coordinates of nonuniform targets on the hypercube [-3pi,3pi)^5,
+%           each a vector of length nj
+%     f     complex Fourier coefficient array, whose size sets (ms,mt,mu,mv).
+%           (Mode ordering given by opts.modeord, in each dimension.)
+%           If a 6D array, 6th dimension sets ntrans, and each of ntrans
+%           5D arrays is transformed with the same nonuniform targets.
 %     isign if >=0, uses + sign in exponential, otherwise - sign.
 %     eps   relative precision requested (generally between 1e-15 and 1e-1)
-%     s     frequency locations of nonuniform targets on R, length-nk vector.
 %     opts   optional struct with optional fields controlling the following:
 %     opts.debug:   0 (silent, default), 1 (timing breakdown), 2 (debug info).
 %     opts.spread_debug: spreader: 0 (no text, default), 1 (some), or 2 (lots)
@@ -27,9 +34,11 @@
 %     opts.spread_thread:   for ntrans>1 only. 0:auto, 1:seq multi, 2:par, etc
 %     opts.maxbatchsize:  for ntrans>1 only. max blocking size, or 0 for auto.
 %     opts.nthreads:   number of threads, or 0: use all available (default)
-%   Outputs:
-%     f     length-nk complex vector of values at targets, or, if ntrans>1,
-%           a matrix of size (nk,ntrans)
+%     opts.modeord: 0 (CMCL increasing mode ordering, default), 1 (FFT ordering)
+%     opts.chkbnds: 0 (don't check NU points valid), 1 (do, default)
+%  Outputs:
+%     c     complex column vector of nj answers at targets, or,
+%           if ntrans>1, matrix of size (nj,ntrans).
 %
 % Notes:
 %  * The vectorized (many vector) interface, ie ntrans>1, can be much faster
@@ -42,12 +51,12 @@
 %  * Full documentation is given in ../finufft-manual.pdf and online at
 %    http://finufft.readthedocs.io
 
-function f = finufft1d3(x,c,isign,eps,s,o)
+function c = finufft5d2(x,y,z,p,q,isign,eps,f,o)
 
-if nargin<6, o.dummy=1; end
-valid_setpts(3,1,x,[],[],[],[],s,[],[],[],[]);
+if nargin<8, o.dummy=1; end
+valid_setpts(2,5,x,y,z,p,q);
 o.floatprec=class(x);                      % should be 'double' or 'single'
-n_transf = valid_ntr(x,c);
-plan = finufft_plan(3,1,isign,n_transf,eps,o);
-plan.setpts(x,[],[],[],[],s,[],[],[],[]);
-f = plan.execute(c);
+[ms,mt,mu,mv,mw,n_transf] = size(f);       % if f 5D array, n_transf=1
+plan = finufft_plan(2,[ms;mt;mu;mv;mw],isign,n_transf,eps,o);
+plan.setpts(x,y,z,p,q);
+c = plan.execute(f);

@@ -96,6 +96,65 @@ fe = sum(c.*exp(1i*isign*(s(k)*x+t(k)*y+u(k)*z)));
 fprintf('3D type-3: rel err in f[%d] is %.3g\n',k,abs((fe-f(k))/max(f(:))))
 fprintf('total 3D time: %.3f s\n',toc)
 
+tic; % --------- 4D
+N1=ceil(1.4*N^(1/4)); N2=N1; N3=N1; N4=round(N/N1/N2/N3);  % pick Fourier mode ranges
+fprintf('4D single-precision: using %d*%d*%d*%d modes (total %d)...\n',N1,N2,N3,N4,N1*N2*N3*N4)
+x = pi*(2*rand(1,M,'single')-1); y = pi*(2*rand(1,M,'single')-1); z = pi*(2*rand(1,M,'single')-1); p = pi*(2*rand(1,M,'single')-1);
+c = randn(1,M,'single')+1i*randn(1,M,'single');
+f = finufft4d1(x,y,z,p,c,isign,eps,N1,N2,N3,N4,o);
+nt1 = floor(0.45*N1); nt2 = floor(-0.35*N2); nt3 = floor(0.17*N3); nt4 = floor(-0.21*N4);
+fe = sum(c.*exp(1i*isign*(nt1*x+nt2*y+nt3*z+nt4*p)));           % exact
+of1 = floor(N1/2)+1; of2 = floor(N2/2)+1; of3 = floor(N3/2)+1; of4 = floor(N4/2)+1;  % index offsets
+fprintf('4D type-1: rel err in F[%d,%d,%d,%d] is %.3g\n',nt1,nt2,nt3,nt4,abs((fe-f(nt1+of1,nt2+of2,nt3+of3,nt4+of4))/max(f(:))))
+
+f = randn(N1,N2,N3,N4,'single')+1i*randn(N1,N2,N3,N4,'single');
+c = finufft4d2(x,y,z,p,isign,eps,f,o);
+[ms mt mu mv]=size(f);
+% ndgrid loops over ms fastest, mv slowest:
+[mm1,mm2,mm3,mm4] = ndgrid(ceil(-ms/2):floor((ms-1)/2),ceil(-mt/2):floor((mt-1)/2),ceil(-mu/2):floor((mu-1)/2),ceil(-mv/2):floor((mv-1)/2));
+ce = sum(f(:).*exp(1i*isign*(mm1(:)*x(j)+mm2(:)*y(j)+mm3(:)*z(j)+mm4(:)*p(j))));
+fprintf('4D type-2: rel err in c[%d] is %.3g\n',j,abs((ce-c(j))/ce))
+
+c = randn(1,M,'single')+1i*randn(1,M,'single');
+s = (N1/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N1)
+t = (N2/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N2)
+u = (N3/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N3)
+v = (N4/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N4)
+f = finufft4d3(x,y,z,p,c,isign,eps,s,t,u,v,o);
+fe = sum(c.*exp(1i*isign*(s(k)*x+t(k)*y+u(k)*z+v(k)*p)));
+fprintf('4D type-3: rel err in f[%d] is %.3g\n',k,abs((fe-f(k))/max(f(:))))
+fprintf('total 4D time: %.3f s\n',toc)
+
+tic; % --------- 5D
+N1=ceil(1.4*N^(1/5)); N2=N1; N3=N1; N4=N1; N5=round(N/N1/N2/N3/N4);  % pick Fourier mode ranges
+fprintf('5D single-precision: using %d*%d*%d*%d*%d modes (total %d)...\n',N1,N2,N3,N4,N5,N1*N2*N3*N4*N5)
+x = pi*(2*rand(1,M,'single')-1); y = pi*(2*rand(1,M,'single')-1); z = pi*(2*rand(1,M,'single')-1); p = pi*(2*rand(1,M,'single')-1); q = pi*(2*rand(1,M,'single')-1);
+c = randn(1,M,'single')+1i*randn(1,M,'single');
+f = finufft5d1(x,y,z,p,q,c,isign,eps,N1,N2,N3,N4,N5,o);
+nt1 = floor(0.45*N1); nt2 = floor(-0.35*N2); nt3 = floor(0.17*N3); nt4 = floor(-0.21*N4); nt5 = floor(0.11*N5);
+fe = sum(c.*exp(1i*isign*(nt1*x+nt2*y+nt3*z+nt4*p+nt5*q)));           % exact
+of1 = floor(N1/2)+1; of2 = floor(N2/2)+1; of3 = floor(N3/2)+1; of4 = floor(N4/2)+1; of5 = floor(N5/2)+1;  % index offsets
+fprintf('5D type-1: rel err in F[%d,%d,%d,%d,%d] is %.3g\n',nt1,nt2,nt3,nt4,nt5,abs((fe-f(nt1+of1,nt2+of2,nt3+of3,nt4+of4,nt5+of5))/max(f(:))))
+
+f = randn(N1,N2,N3,N4,N5,'single')+1i*randn(N1,N2,N3,N4,N5,'single');
+c = finufft5d2(x,y,z,p,q,isign,eps,f,o);
+[ms mt mu mv mw]=size(f);
+% ndgrid loops over ms fastest, mw slowest:
+[mm1,mm2,mm3,mm4,mm5] = ndgrid(ceil(-ms/2):floor((ms-1)/2),ceil(-mt/2):floor((mt-1)/2),ceil(-mu/2):floor((mu-1)/2),ceil(-mv/2):floor((mv-1)/2),ceil(-mw/2):floor((mw-1)/2));
+ce = sum(f(:).*exp(1i*isign*(mm1(:)*x(j)+mm2(:)*y(j)+mm3(:)*z(j)+mm4(:)*p(j)+mm5(:)*q(j))));
+fprintf('5D type-2: rel err in c[%d] is %.3g\n',j,abs((ce-c(j))/ce))
+
+c = randn(1,M,'single')+1i*randn(1,M,'single');
+s = (N1/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N1)
+t = (N2/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N2)
+u = (N3/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N3)
+v = (N4/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N4)
+w = (N5/2)*(2*rand(1,M,'single')-1);             % target freqs of size O(N5)
+f = finufft5d3(x,y,z,p,q,c,isign,eps,s,t,u,v,w,o);
+fe = sum(c.*exp(1i*isign*(s(k)*x+t(k)*y+u(k)*z+v(k)*p+w(k)*q)));
+fprintf('5D type-3: rel err in f[%d] is %.3g\n',k,abs((fe-f(k))/max(f(:))))
+fprintf('total 5D time: %.3f s\n',toc)
+
 o.many_seq = 0; % 0 simultaneously do nufft on all data (default) or 1 sequentially
 tic; % --------- 2Dmanys
 N1=ceil(2.0*sqrt(N)); N2=round(N/N1);           % pick Fourier mode ranges

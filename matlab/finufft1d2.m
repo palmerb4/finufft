@@ -47,11 +47,11 @@
 function c = finufft1d2(x,isign,eps,f,o)
 
 if nargin<5, o.dummy=1; end
-valid_setpts(2,1,x,[],[]);
+valid_setpts(2,1,x,[],[],[],[]);
 o.floatprec=class(x);                      % should be 'double' or 'single'
 [ms,n_transf]=size(f);                     % if f a col vec, n_transf=1, but...
 if ms==1, ms=n_transf; n_transf=1; end     % allow a single row vec as valid f
-p = finufft_plan(2,ms,isign,n_transf,eps,o);
-p.setpts(x,[],[]);
-c = p.execute(f);
+plan = finufft_plan(2,ms,isign,n_transf,eps,o);
+plan.setpts(x,[],[],[],[]);
+c = plan.execute(f);
 

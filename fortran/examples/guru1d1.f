@@ -67,8 +67,8 @@ c     null here uses default options
       call finufft_makeplan(type,dim,n_modes,iflag,ntrans,
      $     tol,plan,null,ier)
 c     note for type 1 or 2, arguments 6-9 ignored...
-      call finufft_setpts(plan,M,xj,null,null,null,
-     $     null,null,null,ier)
+      call finufft_setpts(plan,M,xj,null,null,null,null,null,
+     $     null,null,null,null,null,ier)
 c     Do it: reads cj (strengths), writes fk (mode coeffs) and ier (status)
       call finufft_execute(plan,cj,fk,ier)
       call system_clock(t2,crate)
@@ -107,8 +107,8 @@ c     refer to fftw3.f to set various FFTW plan modes...
 c     note you need a fresh plan if change opts
       call finufft_makeplan(type,dim,n_modes,iflag,ntrans,
      $     tol,plan,opts,ier)
-      call finufft_setpts(plan,M,xj,null,null,null,
-     $     null,null,null,ier)
+      call finufft_setpts(plan,M,xj,null,null,null,null,null,
+     $     null,null,null,null,null,ier)
 c     Do it: reads cj (strengths), writes fk (mode coeffs) and ier (status)
       call finufft_execute(plan,cj,fk,ier)
 c     change the strengths
@@ -121,8 +121,8 @@ c     change the NU pts then do another transform w/ existing strengths...
       do j = 1,M
          xj(j) = pi/2.0 * dcos(pi*j/M)
       enddo
-      call finufft_setpts(plan,M,xj,null,null,null,
-     $     null,null,null,ier)
+      call finufft_setpts(plan,M,xj,null,null,null,null,null,
+     $     null,null,null,null,null,ier)
       call finufft_execute(plan,cj,fk,ier)
       if (ier.eq.0) then
          print *,'done.'

@@ -1,21 +1,24 @@
-% FINUFFT1D3   1D complex nonuniform FFT of type 3 (nonuniform to nonuniform).
+% FINUFFT5D3   5D complex nonuniform FFT of type 3 (nonuniform to nonuniform).
 %
-% f = finufft1d3(x,c,isign,eps,s)
-% f = finufft1d3(x,c,isign,eps,s,opts)
+% f = finufft5d3(x,y,z,p,q,c,isign,eps,s,t,u,v,w)
+% f = finufft5d3(x,y,z,p,q,c,isign,eps,s,t,u,v,w,opts)
 %
 % This computes, to relative precision eps, via a fast algorithm:
 %
 %              nj
-%     f[k]  =  SUM   c[j] exp(+-i s[k] x[j]),      for k = 1, ..., nk
+%     f[k]  =  SUM   c[j] exp(+-i (s[k] x[j] + t[k] y[j] + u[k] z[j] 
+%                                + v[k] p[j] + w[k] q[j])),
 %              j=1
+%                              for k = 1, ..., nk
 %   Inputs:
-%     x     locations of nonuniform sources on R (real line), length-nj vector.
+%     x,y,z,p,q  coordinates of nonuniform sources in R^5, each a length-nj vector.
 %     c     length-nj complex vector of source strengths. If numel(c)>nj,
 %           expects a stack of vectors (eg, a nj*ntrans matrix) each of which is
 %           transformed with the same source and target locations.
 %     isign if >=0, uses + sign in exponential, otherwise - sign.
 %     eps   relative precision requested (generally between 1e-15 and 1e-1)
-%     s     frequency locations of nonuniform targets on R, length-nk vector.
+%     s,t,u,v,w  frequency coordinates of nonuniform targets in R^5,
+%           each a length-nk vector.
 %     opts   optional struct with optional fields controlling the following:
 %     opts.debug:   0 (silent, default), 1 (timing breakdown), 2 (debug info).
 %     opts.spread_debug: spreader: 0 (no text, default), 1 (some), or 2 (lots)
@@ -42,12 +45,13 @@
 %  * Full documentation is given in ../finufft-manual.pdf and online at
 %    http://finufft.readthedocs.io
 
-function f = finufft1d3(x,c,isign,eps,s,o)
+function f = finufft5d3(x,y,z,p,q,c,isign,eps,s,t,u,v,w,o)
 
-if nargin<6, o.dummy=1; end
-valid_setpts(3,1,x,[],[],[],[],s,[],[],[],[]);
+if nargin<12, o.dummy=1; end
+valid_setpts(3,5,x,y,z,p,q,s,t,u,v,w);
 o.floatprec=class(x);                      % should be 'double' or 'single'
 n_transf = valid_ntr(x,c);
-plan = finufft_plan(3,1,isign,n_transf,eps,o);
-plan.setpts(x,[],[],[],[],s,[],[],[],[]);
+plan = finufft_plan(3,5,isign,n_transf,eps,o);
+plan.setpts(x,y,z,p,q,s,t,u,v,w);
 f = plan.execute(c);
+

@@ -11,6 +11,12 @@
 %   finufft3d1 - 3D complex nonuniform FFT of type 1 (nonuniform to uniform).
 %   finufft3d2 - 3D complex nonuniform FFT of type 2 (uniform to nonuniform).
 %   finufft3d3 - 3D complex nonuniform FFT of type 3 (nonuniform to nonuniform).
+%   finufft4d1 - 4D complex nonuniform FFT of type 1 (nonuniform to uniform).
+%   finufft4d2 - 4D complex nonuniform FFT of type 2 (uniform to nonuniform).
+%   finufft4d3 - 4D complex nonuniform FFT of type 3 (nonuniform to nonuniform).
+%   finufft5d1 - 5D complex nonuniform FFT of type 1 (nonuniform to uniform).
+%   finufft5d2 - 5D complex nonuniform FFT of type 2 (uniform to nonuniform).
+%   finufft5d3 - 5D complex nonuniform FFT of type 3 (nonuniform to nonuniform).
 %
 % Guru interface
 %   finufft_plan - create guru plan object for one/many general nonuniform FFTs.

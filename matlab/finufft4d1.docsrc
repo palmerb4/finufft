@@ -1,0 +1,32 @@
+% FINUFFT4D1   4D complex nonuniform FFT of type 1 (nonuniform to uniform).
+%
+% f = finufft4d1(x,y,z,p,c,isign,eps,ms,mt,mu,mv)
+% f = finufft4d1(x,y,z,p,c,isign,eps,ms,mt,mu,mv,opts)
+%
+% This computes, to relative precision eps, via a fast algorithm:
+%
+%                      nj
+%     f[k1,k2,k3,k4] = SUM  c[j] exp(+-i (k1 x[j]+k2 y[j]+k3 z[j]+k4 p[j]))
+%                      j=1
+%
+%     for -ms/2 <= k1 <= (ms-1)/2,  -mt/2 <= k2 <= (mt-1)/2,
+%         -mu/2 <= k3 <= (mu-1)/2,  -mv/2 <= k4 <= (mv-1)/2.
+%
+%   Inputs:
+%     x,y,z,p  coordinates of nonuniform sources on the hypercube [-3pi,3pi)^4,
+%           each a length-nj vector
+%     c     length-nj complex vector of source strengths. If numel(c)>nj,
+%           expects a stack of vectors (eg, a nj*ntrans matrix) each of which is
+%           transformed with the same source locations.
+ISIGNEPS
+%     ms,mt,mu,mv  number of Fourier modes requested in x,y,z and p; each may be
+%           even or odd.
+%           In either case the mode range is integers lying in [-m/2, (m-1)/2]
+OPTS
+OPTS12
+%   Outputs:
+%     f     size (ms,mt,mu,mv) complex array of Fourier coefficients
+%           (ordering given by opts.modeord in each dimension; ms fastest, mv
+%           slowest), or, if ntrans>1, a 5D array of size (ms,mt,mu,mv,ntrans).
+%
+NOTES

@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
   x = (double *)malloc(sizeof(double) * M);
   for (j = 0; j < M; ++j)
     x[j] = M_PI * (2 * ((double)rand() / RAND_MAX) - 1); // uniform random in [-pi,pi)
-  finufft_setpts(plan, M, x, NULL, NULL, 0, NULL, NULL, NULL);
+  finufft_setpts(plan, M, x, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL,  NULL, NULL);
 
   // generate some complex strengths
   c = (double complex *)malloc(sizeof(double complex) * M);

@@ -46,9 +46,9 @@
 function f = finufft2d3(x,y,c,isign,eps,s,t,o)
 
 if nargin<8, o.dummy=1; end
-valid_setpts(3,2,x,y,[],s,t,[]);
+valid_setpts(3,2,x,y,[],[],[],s,t,[],[],[]);
 o.floatprec=class(x);                      % should be 'double' or 'single'
 n_transf = valid_ntr(x,c);
-p = finufft_plan(3,2,isign,n_transf,eps,o);
-p.setpts(x,y,[],s,t,[]);
-f = p.execute(c);
+plan = finufft_plan(3,2,isign,n_transf,eps,o);
+plan.setpts(x,y,[],[],[],s,t,[],[],[]);
+f = plan.execute(c);
