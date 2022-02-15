@@ -278,7 +278,8 @@ c
          if (mv/2*2.eq.mv) then
             cm3 = (0d0, 0d0)
             do k3 = -mu/2, (mu-1)/2
-                do k2 = -mt/2, (mt-1)/2
+               cm2 = (0d0, 0d0)
+                  do k2 = -mt/2, (mt-1)/2
                     cm1 = (0d0, 0d0)
                     do k1 = -ms/2, (ms-1)/2
                         cm1 = cm1 + z1n(k1) * fk(k1,k2,k3,-mv/2)

@@ -143,6 +143,7 @@ c
         zf = conjg(zf)
         cm4 = cj(j)
         do k5 = -1, -mw/2, -1
+            cm4 = zf*cm4
             do k4 = -mv/2, (mv-1)/2
                 cm3 = cm4 * z4n(k4)
                 do k3 = -mu/2, (mu-1)/2
@@ -332,14 +333,16 @@ c
             cm5 = cm5*zf
         enddo
 c
-         if (mv/2*2.eq.mv) then
-            cm3 = (0d0, 0d0)
+         if (mw/2*2.eq.mw) then
+            cm4 = (0d0, 0d0)
             do k4 = -mv/2, (mv-1)/2
+               cm3 = (0d0, 0d0)
                 do k3 = -mu/2, (mu-1)/2
+                  cm2 = (0d0, 0d0)
                     do k2 = -mt/2, (mt-1)/2
                         cm1 = (0d0, 0d0)
                         do k1 = -ms/2, (ms-1)/2
-                            cm1 = cm1 + z1n(k1) * fk(k1,k2,k3,k4,-mv/2)
+                            cm1 = cm1 + z1n(k1) * fk(k1,k2,k3,k4,-mw/2)
                         enddo
                         cm2 = cm2 + z2n(k2) * cm1
                     enddo

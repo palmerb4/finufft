@@ -3,10 +3,9 @@ cc Contact: greengard@cims.nyu.edu
 cc 
 cc This software is being released under a FreeBSD license
 cc (see license.txt in this directory). 
-cc Single-prec version Barnett 4/5/17
 cc
 ************************************************************************
-      subroutine dirft5d1f(nj,xj,yj,zj,pj,qj,cj,iflag,ms,mt,mu,mv,mw,fk)
+      subroutine dirft5d1(nj,xj,yj,zj,pj,qj,cj,iflag,ms,mt,mu,mv,mw,fk)
       implicit none
       integer nj, iflag, ms, mt, mu, mv, mw
       real*8 xj(nj), yj(nj), zj(nj), pj(nj), qj(nj)
@@ -143,6 +142,7 @@ c
         zf = dconjg(zf)
         cm4 = cj(j)
         do k5 = -1, -mw/2, -1
+            cm4 = zf*cm4
             do k4 = -mv/2, (mv-1)/2
                 cm3 = cm4 * z4n(k4)
                 do k3 = -mu/2, (mu-1)/2
@@ -166,7 +166,7 @@ c
 c
 c
 ************************************************************************
-      subroutine dirft5d2f(nj,xj,yj,zj,pj,qj,cj,iflag,ms,mt,mu,mv,mw,fk)
+      subroutine dirft5d2(nj,xj,yj,zj,pj,qj,cj,iflag,ms,mt,mu,mv,mw,fk)
       implicit none
       integer nj, iflag, ms, mt, mu, mv, mw
       real*8 xj(nj), yj(nj), zj(nj), pj(nj), qj(nj)
@@ -332,14 +332,16 @@ c
             cm5 = cm5*zf
         enddo
 c
-         if (mv/2*2.eq.mv) then
-            cm3 = (0d0, 0d0)
+         if (mw/2*2.eq.mw) then
+            cm4 = (0d0, 0d0)
             do k4 = -mv/2, (mv-1)/2
+               cm3 = (0d0, 0d0)
                 do k3 = -mu/2, (mu-1)/2
+                  cm2 = (0d0, 0d0)
                     do k2 = -mt/2, (mt-1)/2
                         cm1 = (0d0, 0d0)
                         do k1 = -ms/2, (ms-1)/2
-                            cm1 = cm1 + z1n(k1) * fk(k1,k2,k3,k4,-mv/2)
+                            cm1 = cm1 + z1n(k1) * fk(k1,k2,k3,k4,-mw/2)
                         enddo
                         cm2 = cm2 + z2n(k2) * cm1
                     enddo
@@ -357,7 +359,7 @@ c
 c
 c
 ************************************************************************
-      subroutine dirft5d3f(nj,xj,yj,zj,pj,qj,cj,iflag,
+      subroutine dirft5d3(nj,xj,yj,zj,pj,qj,cj,iflag,
      &                     nk,sk,tk,uk,vk,wk,fk)
       implicit none
       integer nj, iflag, nk
