@@ -350,7 +350,10 @@ def _rchk(x):
     if x is not None and x.dtype is not np.dtype('float64'):
         raise RuntimeError(
             'FINUFFT data type must be float64 for double precision, data may have mixed precision types')
-    return np.array(x, dtype=np.float64, order='C', copy=False)
+    if x is not None and x.flags['C_CONTIGUOUS']:
+        return x
+    else:
+        return np.array(x, dtype=np.float64, order='C')
 
 
 def _cchk(x):
@@ -358,42 +361,52 @@ def _cchk(x):
     Check if array x is of the appropriate type
     (complex128, C-contiguous in memory)
     If not, produce a copy
+
+    Will raise if provided a real input array.
     """
-    if x is not None and (x.dtype is not np.dtype('complex128') and x.dtype is not np.dtype('float64')):
-        raise RuntimeError(
-            'FINUFFT data type must be complex128 for double precision, data may have mixed precision types')
-    return np.array(x, dtype=np.complex128, order='C', copy=False)
+    if x is not None and x.dtype is not np.dtype('complex128'):
+        raise RuntimeError('FINUFFT data type must be complex128 for double precision, data may have mixed precision types')
+    if x is not None and x.flags['C_CONTIGUOUS']:
+        return x
+    else:
+        return np.array(x, dtype=np.complex128, order='C')
 
 
 def _rchkf(x):
     """
     Check if array x is of the appropriate type
-    (float64, C-contiguous in memory)
+    (float32, C-contiguous in memory)
     If not, produce a copy
     """
     if x is not None and x.dtype is not np.dtype('float32'):
-        raise RuntimeError(
-            'FINUFFT data type must be float32 for single precision, data may have mixed precision types')
-    return np.array(x, dtype=np.float32, order='C', copy=False)
+        raise RuntimeError('FINUFFT data type must be float32 for single precision, data may have mixed precision types')
+    if x is not None and x.flags['C_CONTIGUOUS']:
+        return x
+    else:
+        return np.array(x, dtype=np.float32, order='C')
 
 
 def _cchkf(x):
     """
     Check if array x is of the appropriate type
-    (complex128, C-contiguous in memory)
+    (complex64, C-contiguous in memory)
     If not, produce a copy
+
+    Will raise if provided a real input array.
     """
-    if x is not None and (x.dtype is not np.dtype('complex64') and x.dtype is not np.dtype('float32')):
-        raise RuntimeError(
-            'FINUFFT data type must be complex64 for single precision, data may have mixed precision types')
-    return np.array(x, dtype=np.complex64, order='C', copy=False)
+    if x is not None and x.dtype is not np.dtype('complex64'):
+        raise RuntimeError('FINUFFT data type must be complex64 for single precision, data may have mixed precision types')
+    if x is not None and x.flags['C_CONTIGUOUS']:
+        return x
+    else:
+        return np.array(x, dtype=np.complex64, order='C')
 
 
 def _copy(_x, x):
     """
     Copy _x to x, only if the underlying data of _x differs from that of x
     """
-    if _x.data != x.data:
+    if _x is not x:
         x[:] = _x
 
 
@@ -401,7 +414,7 @@ def _copy(_x, x):
 def err_handler(ier):
     switcher = {
         1: 'FINUFFT eps tolerance too small to achieve',
-        2: 'FINUFFT malloc size requested greater than MAXNF',
+        2: 'FINUFFT malloc size requested greater than MAX_NF',
         3: 'FINUFFT spreader fine grid too small compared to kernel width',
         4: 'FINUFFT spreader nonuniform point out of range [-3pi,3pi]^d in type 1 or 2',
         5: 'FINUFFT spreader malloc error',
@@ -411,7 +424,8 @@ def err_handler(ier):
         9: 'FINUFFT number of transforms ntrans invalid',
         10: 'FINUFFT transform type invalid',
         11: 'FINUFFT general malloc failure',
-        12: 'FINUFFT number of dimensions dim invalid'
+        12: 'FINUFFT number of dimensions dim invalid',
+        13: 'FINUFFT spread_thread option invalid',
     }
     err_msg = switcher.get(ier, 'Unknown error')
 

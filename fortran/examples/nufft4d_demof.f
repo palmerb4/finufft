@@ -16,6 +16,9 @@ c     ../../lib-static/libfinufft.a -lstdc++ -lfftw3 -lfftw3_omp -lm -fopenmp
 c
       program nufft4d_demof
       implicit none
+      
+c     our fortran-header, always needed
+      include 'finufft.fh'
 c
       integer i,ier,iflag,j,k1,k2,k3,k4,mx,n1,n2,n3,n4
       integer*8 ms,mt,mu,mv,nj,nk
@@ -24,8 +27,8 @@ c
       real*4 err,pi,eps,salg,ealg
       parameter (pi=3.141592653589793238462643383279502884197d0)
       complex*8, allocatable :: cj(:),cj0(:),cj1(:),fk0(:),fk1(:)
-c     this (since unallocated) used to pass a NULL ptr to FINUFFT...
-      integer*8, allocatable :: null
+c     for default opts, make a null pointer...
+      type(nufft_opts), pointer :: defopts => null()
 c
 c     --------------------------------------------------
 c     create some test data
@@ -93,7 +96,7 @@ c     -----------------------
 c
          call dirft4d1f(nj,xj,yj,zj,pj,cj,iflag,ms,mt,mu,mv,fk0)
          call finufftf4d1(nj,xj,yj,zj,pj,cj,iflag,eps,ms,mt,mu,mv,
-     &                  fk1,null,ier)
+     &                  fk1,defopts,ier)
          print *, ' ier = ',ier
          call errcomp(fk0,fk1,nk,err)
          print *, ' type 1 error = ',err
@@ -103,7 +106,7 @@ c      call 4D Type 2 method
 c     -----------------------
          call dirft4d2f(nj,xj,yj,zj,pj,cj0,iflag,ms,mt,mu,mv,fk0)
          call finufftf4d2(nj,xj,yj,zj,pj,cj1,iflag,eps,ms,mt,mu,mv,fk0,
-     &        null,ier)
+     &        defopts,ier)
          print *, ' ier = ',ier
          call errcomp(cj0,cj1,nj,err)
          print *, ' type 2 error = ',err
@@ -120,7 +123,7 @@ c     -----------------------
 
          call dirft4d3f(nj,xj,yj,zj,pj,cj,iflag,nk,sk,tk,uk,vk,fk0)
          call finufftf4d3(nj,xj,yj,zj,pj,cj,iflag,eps,nk,sk,tk,uk,vk,
-     &                   fk1,null,ier)
+     &                   fk1,defopts,ier)
          print *, ' ier = ',ier
          call errcomp(fk0,fk1,nk,err)
          print *, ' type 3 error = ',err
