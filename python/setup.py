@@ -9,6 +9,7 @@ __version__ = '2.0.4.post1'
 
 from setuptools import setup, Extension
 import os
+import platform
 
 from tempfile import mkstemp
 
